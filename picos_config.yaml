@@ -1,0 +1,12 @@
+# PICOS 연구 질문 설정
+# Population: 연구 대상 집단 (예: 18세 이상 성인)
+# Intervention: 중재 또는 연구 대상 기술/치료법 (예: 디지털 임플란트 가이드 수술)
+# Comparison: 비교 대상 (예: 전통적인 자유 핸드 임플란트 수술)
+# Outcome: 결과 (예: 수술 정확도, 수술 시간, 환자 통증)
+# Study_design: 연구 설계 (선택 사항, 예: Randomized Controlled Trial, Cohort Study)
+picos:
+  population: "18세 이상 성인"
+  intervention: "디지털 임플란트 가이드 수술"
+  comparison: "전통적인 자유 핸드 임플란트 수술"
+  outcome: "수술 정확도, 수술 시간, 환자 통증"
+  study_design: "Randomized Controlled Trial"

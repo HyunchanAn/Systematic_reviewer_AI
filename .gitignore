@@ -1,0 +1,23 @@
+# LLM model files
+/sr-gemma3/models/*.llamafile
+/sr-gemma3/models/*.gguf
+
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Raw and processed data folders
+# These can get large and are usually not versioned.
+/sr-gemma3/data/raw/
+/sr-gemma3/data/tei/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
