@@ -455,4 +455,4 @@ sr-gemma3/
 ### 04-8. 리스크/대안
  - 모델 크기 제한: 8 GB VRAM → 1–4B급 권장. 더 큰 모델은 속도 급감(오프로딩) 감수. 참고치는 3rd-party임을 명시. 
  - TensorRT 가속: Gemma 3 공식 지원 미정. 초기에는 Ollama/vLLM 유지. 
- - RoB 자동화 신뢰도: RobotReviewer 등은 보조 도구다. 일치도/재현성 한계가 반복 보고됨. 
+ - RoB 자동화 신뢰도: RobotReviewer 등은 보조 도구. 일치도/재현성 한계가 반복 보고됨. 
