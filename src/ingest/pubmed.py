@@ -5,14 +5,17 @@ import time
 # Base URL for PubMed E-utilities
 EUTILS_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
 
-def fetch_pmids(query, max_ret=100, api_key=None):
+def fetch_pmids(query, max_ret=100, api_key=None, sort='pub_date', mindate=None, maxdate=None):
     """
     Fetches a list of PubMed IDs (PMIDs) for a given search query.
 
     Args:
-        query (str): The search query string (e.g., '(\"PCOS\"[Title/Abstract]) AND (\"metformin\"[Title/Abstract])').
+        query (str): The search query string.
         max_ret (int): The maximum number of PMIDs to retrieve.
-        api_key (str, optional): Your NCBI API key to increase rate limits. Defaults to None.
+        api_key (str, optional): Your NCBI API key.
+        sort (str, optional): The sort order. Defaults to 'pub_date' for newest first.
+        mindate (str, optional): Start date in YYYY/MM/DD format.
+        maxdate (str, optional): End date in YYYY/MM/DD format.
 
     Returns:
         list: A list of PMID strings, or an empty list if the search fails.
@@ -24,9 +27,16 @@ def fetch_pmids(query, max_ret=100, api_key=None):
         'term': query,
         'retmax': max_ret,
         'retmode': 'json',
+        'sort': sort,
     }
     if api_key:
         params['api_key'] = api_key
+    
+    # Add date range parameters if provided
+    if mindate and maxdate:
+        params['datetype'] = 'pdat' # Use publication date
+        params['mindate'] = mindate
+        params['maxdate'] = maxdate
 
     try:
         response = requests.get(search_url, params=params)

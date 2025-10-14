@@ -66,5 +66,4 @@ if __name__ == '__main__':
     if response:
         print("\n--- LLM Response ---")
         print(response)
-        print("--------------------
-")
+        print("--------------------")

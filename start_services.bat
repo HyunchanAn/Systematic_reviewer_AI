@@ -1,5 +1,4 @@
 @echo off
-:: 이 스크립트는 Systematic Reviewer AI 프로젝트에 필요한 핵심 서비스를 실행합니다.
 :: (This script starts the core services required for the Systematic Reviewer AI project.)
 
 echo.
@@ -20,7 +19,6 @@ echo [2/2] Starting Gemma-3 LLM Server...
 echo      (A new window will open for the LLM server)
 echo.
 
-:: 프로젝트의 'models' 폴더 안에 llamafile을 위치시켜 주세요.
 :: Please place your llamafile inside the 'models' folder of the project.
 set LLM_PATH="models\google_gemma-3-12b-it-Q4_K_M.llamafile"
 

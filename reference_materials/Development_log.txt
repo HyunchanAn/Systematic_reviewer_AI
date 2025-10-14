@@ -7,8 +7,8 @@
 1.  Gemma-3 모델(.llamafile) 사용법 스터디 노트
 
     a. llamafile 이란?
-       - llamafile은 대규모 언어 모델(LLM)의 가중치와 실행 코드를 하나로 묶은 단일 실행 파일입니다.
-       - 덕분에 리눅스, macOS, 윈도우 등 다양한 운영체제에서 별도의 설치 과정 없이 모델을 쉽게 실행할 수 있습니다.
+       - llamafile은 대규모 언어 모델(LLM)의 가중치와 실행 코드를 하나로 묶은 단일 실행 파일임.
+       - 덕분에 리눅스, macOS, 윈도우 등 다양한 운영체제에서 별도의 설치 과정 없이 모델을 쉽게 실행할 수 있음.
 
     b. 로컬 모델 실행 방법 (Windows 기준)
        - 로컬에 저장된 모델 파일: `C:\AI_models\google_gemma-3-12b-it-Q4_K_M.llamafile`
@@ -26,11 +26,11 @@
          ```
 
     c. 기타 유용한 옵션
-       - 컨텍스트 크기 조절: `-c` 플래그로 컨텍스트 창 크기를 조절할 수 있습니다. (예: `-c 0`은 최대 크기 사용)
-       - 파일과 대화하기: `-f` 플래그로 텍스트 파일을 지정하면, 해당 파일의 내용을 기반으로 대화를 시작할 수 있습니다.
+       - 컨텍스트 크기 조절: `-c` 플래그로 컨텍스트 창 크기를 조절할 수 있음. (예: `-c 0`은 최대 크기 사용)
+       - 파일과 대화하기: `-f` 플래그로 텍스트 파일을 지정하면, 해당 파일의 내용을 기반으로 대화를 시작할 수 있음.
 
     d. 코드에서 API처럼 사용하기 (Python 예제)
-       - `llamafile`을 서버 모드로 실행하면, OpenAI API와 호환되는 로컬 API 서버가 생성됩니다.
+       - `llamafile`을 서버 모드로 실행하면, OpenAI API와 호환되는 로컬 API 서버가 생성됨.
        - 1단계: 서버 실행
          ```bash
          C:\AI_models\google_gemma-3-12b-it-Q4_K_M.llamafile --server -ngl 999
@@ -74,7 +74,7 @@
 3.  데이터 추출 템플릿 구조 (Example001.csv 기반)
 
     a. 목적
-       - 체계적 문헌고찰 과정에서 각 논문의 핵심 정보를 일관된 형식으로 추출하고 관리합니다.
+       - 체계적 문헌고찰 과정에서 각 논문의 핵심 정보를 일관된 형식으로 추출하고 관리함.
 
     b. 주요 항목 (CSV 컬럼)
        - Title, Author Names, Abstract, DOI, Full Text Link, Embase Link 등
@@ -87,16 +87,16 @@
 ### 01. 기획 문서 작성 및 초기 환경 구축
 
 1.  프로젝트 구조 생성
-    - `sr-gemma3` 프로젝트 디렉터리 구조를 생성했습니다.
+    - `sr-gemma3` 프로젝트 디렉터리 구조를 생성함.
 
 2.  오픈소스 도구 복제
-    - Git의 긴 파일 경로 문제 해결 (`core.longpaths` 설정) 후, 기획 문서에 명시된 핵심 오픈소스 도구(ASReview, RobotReviewer, GROBID)를 `sr-gemma3/tools/`에 복제했습니다.
+    - Git의 긴 파일 경로 문제 해결 (`core.longpaths` 설정) 후, 기획 문서에 명시된 핵심 오픈소스 도구(ASReview, RobotReviewer, GROBID)를 `sr-gemma3/tools/`에 복제함.
 
 3.  의존성 파일 생성
-    - Python 의존성 관리를 위한 `requirements.txt` 파일을 생성했습니다 (`openai`, `requests`, `pandas`, `asreview` 등 명시).
+    - Python 의존성 관리를 위한 `requirements.txt` 파일을 생성함 (`openai`, `requests`, `pandas`, `asreview` 등 명시).
 
 4.  초기 코드 스캐폴드 작성
-    - SR 파이프라인의 각 기능 모듈에 대한 초기 코드를 작성했습니다.
+    - SR 파이프라인의 각 기능 모듈에 대한 초기 코드를 작성함.
       - a. `main.py`: 전체 워크플로우를 조율하는 메인 스크립트
       - b. `src/llm/client.py`: 로컬 Gemma 3 (llamafile) 모델과 통신하는 클라이언트
       - c. `src/ingest/pubmed.py`: PubMed API를 통해 논문 데이터를 수집하는 모듈
@@ -105,62 +105,112 @@
 ### 02. 향후 작업 계획
 
 1.  Python 환경 설정
-    - `sr-gemma3` 디렉터리에서 가상 환경을 생성하고, `pip install -r requirements.txt` 명령어로 필요한 라이브러리를 설치합니다.
+    - `sr-gemma3` 디렉터리에서 가상 환경을 생성하고, `pip install -r requirements.txt` 명령어로 필요한 라이브러리를 설치함.
 
 2.  핵심 서비스 실행
-    - a. Docker: Docker Desktop을 설치하고, `sr-gemma3/tools/grobid` 디렉터리의 가이드를 따라 GROBID 서비스를 컨테이너로 실행합니다.
-    - b. LLM 서버: `study_note.txt`를 참고하여 로컬 Gemma 3 모델(`google_gemma-3-12b-it-Q4_K_M.llamafile`)을 GPU 가속을 적용한 서버 모드로 실행합니다. (`--server -ngl 999`)
+    - a. Docker: Docker Desktop을 설치하고, `sr-gemma3/tools/grobid` 디렉터리의 가이드를 따라 GROBID 서비스를 컨테이너로 실행함.
+    - b. LLM 서버: `study_note.txt`를 참고하여 로컬 Gemma 3 모델(`google_gemma-3-12b-it-Q4_K_M.llamafile`)을 GPU 가속을 적용한 서버 모드로 실행함. (`--server -ngl 999`)
 
 3.  초기 파이프라인 테스트
-    - `python sr-gemma3/main.py`를 실행하여 PubMed 데이터 수집, LLM 서버 연결 등 기본 기능이 정상적으로 동작하는지 확인합니다.
+    - `python sr-gemma3/main.py`를 실행하여 PubMed 데이터 수집, LLM 서버 연결 등 기본 기능이 정상적으로 동작하는지 확인함.
 
 4.  기능 구체화 및 개발
-    - `main.py`의 플레이스홀더(Placeholder) 부분을 중심으로 실제 기능을 구현합니다.
-      - a. PDF 다운로드: Unpaywall API 등을 연동하여 PMID나 DOI를 기반으로 PDF 원문을 자동으로 다운로드하는 기능을 `src/ingest`에 추가합니다.
-      - b. 스크리닝 자동화: `ASReview`의 REST API와 연동하여 `main.py`에서 스크리닝 프로젝트를 생성하고, 라벨링 작업을 자동화하는 로직을 구현합니다.
-      - c. 데이터 추출 고도화: `GROBID`로 파싱된 XML에서 텍스트를 추출하고, `LLMClient`를 통해 PICO 정보, 주요 결과 등을 자동으로 추출하여 `data/tables`에 저장하는 기능을 구현합니다.
-      - d. 보고서 생성: 메타분석(R) 및 PRISMA 다이어그램 생성 모듈을 `src/report`에 개발합니다.
+    - `main.py`의 플레이스홀더(Placeholder) 부분을 중심으로 실제 기능을 구현함.
+      - a. PDF 다운로드: Unpaywall API 등을 연동하여 PMID나 DOI를 기반으로 PDF 원문을 자동으로 다운로드하는 기능을 `src/ingest`에 추가함.
+      - b. 스크리닝 자동화: `ASReview`의 REST API와 연동하여 `main.py`에서 스크리닝 프로젝트를 생성하고, 라벨링 작업을 자동화하는 로직을 구현함.
+      - c. 데이터 추출 고도화: `GROBID`로 파싱된 XML에서 텍스트를 추출하고, `LLMClient`를 통해 PICO 정보, 주요 결과 등을 자동으로 추출하여 `data/tables`에 저장하는 기능을 구현함.
+      - d. 보고서 생성: 메타분석(R) 및 PRISMA 다이어그램 생성 모듈을 `src/report`에 개발함.
 
 ### 03. 프로젝트 구조 개선 및 문서화
 
 1.  `README.md` 작성
-    -   프로젝트의 개요, 주요 기능, 구조, 설치 및 사용법을 상세히 기술한 `README.md` 파일을 작성했습니다.
+    -   프로젝트의 개요, 주요 기능, 구조, 설치 및 사용법을 상세히 기술한 `README.md` 파일을 작성함.
 
 2.  저장소 구조 재구성
-    -   깃허브 저장소의 명확성을 높이고 표준적인 구조를 따르기 위해 전체 디렉터리 구조를 재구성했습니다.
-    -   핵심 프로젝트인 `sr-gemma3`의 내용을 최상위 디렉터리로 이동시켰습니다.
-    -   개발 로그, 메모, 예제 파일 등 참고 자료를 보관하기 위한 `reference_materials` 폴더를 생성하고 관련 파일들을 이전했습니다.
-    -   기존의 불필요한 `sr-gemma3` 폴더는 삭제했습니다.
+    -   깃허브 저장소의 명확성을 높이고 표준적인 구조를 따르기 위해 전체 디렉터리 구조를 재구성함.
+    -   핵심 프로젝트인 `sr-gemma3`의 내용을 최상위 디렉터리로 이동시킴.
+    -   개발 로그, 메모, 예제 파일 등 참고 자료를 보관하기 위한 `reference_materials` 폴더를 생성하고 관련 파일들을 이전함.
+    -   기존의 불필요한 `sr-gemma3` 폴더는 삭제함.
 
 3.  문서 경로 업데이트
-    -   구조 변경에 따라, `README.md` 파일 내에 있던 `Development_log.txt`의 경로를 `reference_materials/Development_log.txt`로 수정했습니다.
+    -   구조 변경에 따라, `README.md` 파일 내에 있던 `Development_log.txt`의 경로를 `reference_materials/Development_log.txt`로 수정함.
 
 ### 04. PICOS 입력 방식 구현 및 실행 환경 분석
 
 1.  PICOS 질문 입력 로직 구현:
-    -   체계적 문헌고찰의 시작점인 PICOS 질문을 입력받는 유연한 방식을 구현했습니다.
-    -   `picos_config.yaml` 파일 생성: 연구 질문을 체계적으로 관리하고 재사용할 수 있도록 YAML 설정 파일을 도입했습니다.
+    -   체계적 문헌고찰의 시작점인 PICOS 질문을 입력받는 유연한 방식을 구현함.
+    -   `picos_config.yaml` 파일 생성: 연구 질문을 체계적으로 관리하고 재사용할 수 있도록 YAML 설정 파일을 도입함.
     -   `main.py` 로직 수정:
-        -   프로그램 실행 시 `picos_config.yaml` 파일이 있으면, 사용자에게 해당 설정을 사용할지 묻습니다.
-        -   파일이 없거나 사용자가 원하지 않을 경우, 대화형 프롬프트를 통해 새로운 PICOS 질문을 입력받습니다.
-        -   새로 입력된 내용은 `picos_config.yaml` 파일로 저장(또는 덮어쓰기)할 수 있는 옵션을 제공합니다.
-    -   의존성 추가: YAML 파일 처리를 위해 `requirements.txt`에 `PyYAML` 라이브러리를 추가했습니다.
+        -   프로그램 실행 시 `picos_config.yaml` 파일이 있으면, 사용자에게 해당 설정을 사용할지 물음.
+        -   파일이 없거나 사용자가 원하지 않을 경우, 대화형 프롬프트를 통해 새로운 PICOS 질문을 입력받음.
+        -   새로 입력된 내용은 `picos_config.yaml` 파일로 저장(또는 덮어쓰기)할 수 있는 옵션을 제공함.
+    -   의존성 추가: YAML 파일 처리를 위해 `requirements.txt`에 `PyYAML` 라이브러리를 추가함.
 
 2.  실행 환경 분석 및 워크플로우 수립:
-    -   현재 사용 중인 두 컴퓨터(병원/집)의 하드웨어 스펙을 기반으로 각 파이프라인 단계의 실행 가능성을 분석했습니다.
-    -   환경에 무관한 작업: 데이터 수집(PubMed 검색), 문헌 스크리닝(ASReview) 등 전처리 및 상호작용이 필요한 단계를 수행하기에 적합합니다.
-    -   집 컴퓨터 (GPU 기반): LLM(Gemma-3) 모델 추론, RobotReviewer(BERT) 실행, GROBID 대량 처리 등 높은 연산 능력이 요구되는 핵심 AI 작업을 수행하는 데 필수적입니다.
-    -   이에 따라, 병원에서 데이터 수집 및 스크리닝을 진행하고, 집에서 GPU를 활용해 심층 분석을 수행하는 효율적인 분산 워크플로우를 수립했습니다.
+    -   현재 사용 중인 두 컴퓨터(병원/집)의 하드웨어 스펙을 기반으로 각 파이프라인 단계의 실행 가능성을 분석함.
+    -   환경에 무관한 작업: 데이터 수집(PubMed 검색), 문헌 스크리닝(ASReview) 등 전처리 및 상호작용이 필요한 단계를 수행하기에 적합함.
+    -   집 컴퓨터 (GPU 기반): LLM(Gemma-3) 모델 추론, RobotReviewer(BERT) 실행, GROBID 대량 처리 등 높은 연산 능력이 요구되는 핵심 AI 작업을 수행하는 데 필수적임.
+    -   이에 따라, 병원에서 데이터 수집 및 스크리닝을 진행하고, 집에서 GPU를 활용해 심층 분석을 수행하는 효율적인 분산 워크플로우를 수립함.
 
 ### 05. 재사용성을 위한 워크플로우 정립
 
 1.  .gitignore 파일 업데이트:
-    -   프로젝트의 재사용성을 높이고 각 연구 프로젝트의 데이터를 분리하기 위해 .gitignore 파일을 수정했습니다.
-    -   picos_config.yaml, data/ 폴더, reference_materials/ 폴더를 Git 버전 관리에서 제외하도록 설정했습니다. 이는 깃허브 저장소를 순수한 파이프라인 '템플릿'으로 유지하기 위함입니다.
+    -   프로젝트의 재사용성을 높이고 각 연구 프로젝트의 데이터를 분리하기 위해 .gitignore 파일을 수정함.
+    -   picos_config.yaml, data/ 폴더, reference_materials/ 폴더를 Git 버전 관리에서 제외하도록 설정함. 이는 깃허브 저장소를 순수한 파이프라인 '템플릿'으로 유지하기 위함임.
 
 2.  서비스 시작 스크립트 (start_services.bat) 생성 및 개선:
-    -   GROBID Docker 서비스와 Gemma-3 LLM 서버를 한 번에 쉽게 실행할 수 있도록 start_services.bat 배치 파일을 루트 경로에 생성했습니다.
-    -   LLM 모델 파일의 경로를 C:\AI_models\와 같은 절대 경로 대신, 프로젝트 내부의 models/ 폴더를 참조하는 상대 경로로 수정하여 프로젝트의 이동성을 확보했습니다.
+    -   GROBID Docker 서비스와 Gemma-3 LLM 서버를 한 번에 쉽게 실행할 수 있도록 start_services.bat 배치 파일을 루트 경로에 생성함.
+    -   LLM 모델 파일의 경로를 C:\AI_models\와 같은 절대 경로 대신, 프로젝트 내부의 models/ 폴더를 참조하는 상대 경로로 수정하여 프로젝트의 이동성을 확보함.
 
 3.  다중 주제 연구를 위한 워크플로우 제안:
-    -   깃허브 저장소를 파이프라인 템플릿으로 활용하고, 새로운 연구 주제마다 이 템플릿 폴더를 복사하여 독립적인 프로젝트 폴더에서 작업하는 방식을 제안했습니다. 이를 통해 각 연구의 데이터가 템플릿 코드와 분리되어 관리됩니다.
+    -   깃허브 저장소를 파이프라인 템플릿으로 활용하고, 새로운 연구 주제마다 이 템플릿 폴더를 복사하여 독립적인 프로젝트 폴더에서 작업하는 방식을 제안함. 이를 통해 각 연구의 데이터가 템플릿 코드와 분리되어 관리됨.
+
+4.  각 경로별 readme.md 업데이트
+    -   빈 폴더가 git에 추적되지 않는 문제를 해결함 
+    -   각 폴더별 설명 추가함
+
+##### 2025.10.14 (2일차) 병원 #####
+
+### 06. PDF 자동 다운로드 기능 구현 및 파이프라인 통합
+
+1.  초기 파이프라인 테스트 및 디버깅:
+    -   `main.py`의 초기 테스트 과정에서 여러 문제를 발견하고 순차적으로 해결함.
+    -   `SyntaxError`: `src/llm/client.py`의 잘못된 문자열 문제를 수정함.
+    -   PubMed 검색 오류 (0건 검색):
+        -   한글 검색어가 원인임을 파악하고, `picos_config.yaml`의 내용을 영어로 번역하여 문제를 해결함.
+        -   이후에도 검색 결과가 없자, 검색어가 너무 구체적이라고 판단하여 더 일반적인 용어로 수정함.
+        -   PubMed의 검색 필드 태그 문법에 오류(`:ti,ab`)가 있음을 발견하고, 올바른 문법(`[tiab]`, `[pt]`)을 사용하도록 `main.py`의 `construct_search_query` 함수를 개선함.
+
+2.  PDF 다운로더 모듈 구현:
+    -   `향후 작업 계획`에 따라, PDF 자동 다운로드 기능 개발에 착수함.
+    -   `src/ingest/downloader.py` 모듈을 새로 생성함.
+    -   이 모듈은 `articles.xml` 파일에서 DOI를 추출하고, `Unpaywall API`에 요청을 보내 공개적으로 접근 가능한 PDF 링크를 찾아 로컬(`data/pdf/`)에 저장하는 기능을 포함함.
+
+3.  PubMed API 동작 방식 분석 및 추가 디버깅:
+    -   `downloader.py` 테스트 결과, Unpaywall API가 `422 Unprocessable Entity` 오류를 반환하며 다운로드에 실패하는 현상을 확인함.
+    -   검색된 논문들이 대부분 아직 정식 출판되지 않은 미래의("in-press") 논문들이라 DOI가 활성화되지 않은 것을 원인으로 추정함.
+    -   이 문제를 해결하기 위해, `src/ingest/pubmed.py`의 `fetch_pmids` 함수를 수정하여 날짜 범위(`mindate`, `maxdate`)로 검색을 제한하고 정렬하는 기능을 추가함.
+    -   `main.py`에서 이 기능을 사용하도록 수정하여, 과거에 출판된 논문만 검색하도록 설정함.
+    -   테스트 결과, 날짜 필터링은 성공했으나 다운로드는 여전히 0건이었음. 이는 검색된 논문들이 오픈 액세스가 아니기 때문이며, 기능 자체는 정상 작동함을 확인함.
+
+4.  파이프라인 통합 및 최종 테스트:
+    -   개발 및 테스트가 완료된 `downloader.py` 모듈을 `main.py`의 메인 파이프라인에 통합함.
+    -   통합 과정에서 발생한 여러 `IndentationError`를 `main.py` 전체 코드를 재작성하여 해결함.
+    -   최종적으로 `main.py`를 실행하여, '논문 검색 -> XML 저장 -> PDF 다운로드 시도'까지의 전체 파이프라인이 오류 없이 한 번에 실행되는 것을 확인하며 기능 구현을 완료함.
+
+### 07. 데이터 초기화 기능 개선 및 CSV 출력 추가
+
+1.  이전 작업 데이터 확인 및 초기화 기능 구현:
+    -   `main.py` 실행 시 `data` 폴더에 이전 작업 흔적이 있는지 확인하는 로직 추가함.
+    -   사용자에게 초기화 여부를 묻고, 동의 시 데이터를 정리하도록 구현함.
+    -   안전한 데이터 초기화 로직으로 개선: `shutil.rmtree` 대신, `data` 폴더 내의 생성된 파일(`articles.xml`, `retrieved_pmids.csv`, `articles.csv`) 및 `pdf` 폴더의 내용물만 삭제하고, `readme.md`와 같은 비생성 파일 및 디렉터리 구조는 유지하도록 수정함.
+    -   데이터 초기화 로직 분리: 이 안전한 초기화 로직을 `src/utils/data_manager.py` 모듈의 `clear_generated_data_files()` 함수로 분리하여 재사용성을 높임.
+    -   `main.py`의 `check_and_clear_previous_run()` 함수가 `data_manager.clear_generated_data_files()`를 호출하도록 변경함.
+
+2.  별도 데이터 초기화 스크립트 (`clear_data.py`) 생성:
+    -   프로젝트 루트에 `clear_data.py` 스크립트를 생성하여, `python clear_data.py` 명령으로 언제든지 생성된 데이터를 안전하게 초기화할 수 있도록 함.
+
+3.  XML 데이터 CSV 변환 및 저장 기능 추가:
+    -   `articles.xml`의 내용을 읽기 쉬운 형태로 제공하기 위해 `src/parse/pubmed_parser.py` 모듈을 새로 생성함.
+    -   `pubmed_parser.py`는 PubMed XML에서 PMID, DOI, 제목, 저널, 출판 연도, 초록 등의 핵심 정보를 추출하여 `articles.csv` 파일로 저장하는 기능을 구현함.
+    -   `main.py` 파이프라인에 `articles.xml` 저장 직후 `pubmed_parser`를 호출하여 `data/tables/articles.csv`를 생성하는 단계를 추가함.
