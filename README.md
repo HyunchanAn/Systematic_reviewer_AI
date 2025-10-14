@@ -1,6 +1,6 @@
 ## 1. 개요
 
-이 프로젝트는 체계적 문헌고찰(Systematic Review) 논문 작성 과정의 일부를 자동화하여 연구자의 부담을 경감시키는 AI 보조 파이프라인을 구축하는 것을 목표로 합니다. 로컬에서 구동되는 Gemma 3 언어 모델을 기반으로, 문헌 검색, 스크리닝, 데이터 추출 등의 작업을 효율화합니다.
+이 프로젝트는 체계적 문헌고찰(Systematic Review) 논문 작성 과정의 일부를 자동화하여 연구자의 부담을 경감시키는 AI 보조 파이프라인을 구축하는 것을 목표로 합니다. 로컬에서 구동되는 Ollama 기반의 Gemma 2 언어 모델을 기반으로, 문헌 검색, 스크리닝, 데이터 추출 등의 작업을 효율화합니다.
 
 ## 2. 주요 기능 및 구성 요소
 
@@ -8,7 +8,7 @@
 -   **PDF 다운로드 (PDF Download)**: 검색된 논문의 DOI를 기반으로 Unpaywall API를 통해 오픈 액세스 PDF를 자동으로 찾아 다운로드합니다.
 -   **데이터 관리 (Data Management)**: 이전 실행 데이터를 감지하고 사용자 확인 후 안전하게 초기화하는 기능 및 XML 데이터를 CSV 형식으로 변환하여 저장하는 기능을 제공합니다.
 -   PDF 파싱 (Parsing): GROBID를 이용해 PDF 논문을 구조화된 TEI/XML 형식으로 변환하여 텍스트, 저자, 초록, 참고문헌 등을 분리합니다.
--   LLM 기반 보조 (LLM Assistance): 로컬 `llamafile`로 실행되는 Gemma 3 모델을 통해 논문 내용 요약, PICO 프레임워크 기반 정보 추출 등을 보조합니다.
+-   LLM 기반 보조 (LLM Assistance): 로컬 Ollama 기반의 `gemma2:9b-instruct` 모델을 통해 논문 내용 요약, PICO 프레임워크 기반 정보 추출 등을 보조합니다.
 -   스크리닝 (Screening): ASReview의 액티브 러닝(Active Learning) 기술을 연동하여, 최소한의 라벨링으로 대규모 문헌을 효율적으로 스크리닝하는 것을 목표로 합니다.
 -   RoB 평가 보조 (Risk of Bias): RobotReviewer를 보조 도구로 활용하여 편향 위험 평가의 초안을 생성합니다.
 
@@ -47,11 +47,16 @@
     -   Git
     -   Python 3.9 이상
     -   Docker Desktop
+    -   Ollama
 
 2.  **외부 도구 및 모델 준비**
     -   이 프로젝트는 `git clone` 시 `tools` 디렉터리에 필요한 오픈소스 도구(ASReview, GROBID 등)를 함께 다운로드합니다.
-    -   Hugging Face 등에서 `google_gemma-3-12b-it-Q4_K_M.llamafile`과 같은 Gemma 3 모델을 다운로드합니다.
-    -   **다운로드한 모델 파일을 이 프로젝트의 `models/` 디렉터리 안으로 이동시킵니다.**
+    -   **Ollama 설치 및 모델 다운로드**
+        -   Ollama 공식 웹사이트(https://ollama.com/)에서 Windows용 Ollama를 다운로드하여 설치합니다.
+        -   설치 후, 터미널에서 다음 명령어를 실행하여 `gemma2:9b-instruct` 모델을 다운로드합니다.
+            ```bash
+            ollama pull gemma2:9b-instruct
+            ```
 
 3.  **Python 의존성 설치**
     -   프로젝트 루트에서 가상 환경을 생성하고 활성화하는 것을 권장합니다.
@@ -64,10 +69,9 @@
 
 ### 5.1. 서비스 시작
 
-1.  **핵심 서비스 실행 (GROBID, LLM 서버)**
-    -   프로젝트 루트에 있는 **`start_services.bat` 파일을 더블클릭하여 실행**합니다.
-    -   이 스크립트는 백그라운드에서 GROBID Docker 컨테이너를 시작하고, 새 터미널 창에서 Gemma 3 LLM 서버를 실행합니다.
-    -   **참고**: `start_services.bat` 파일 내의 `LLM_PATH` 변수를 자신의 `llamafile` 모델 경로에 맞게 수정해야 할 수 있습니다.
+1.  **핵심 서비스 실행 (GROBID)**
+    -   **중요**: `start_services.bat` 파일에 마우스 오른쪽 버튼을 클릭하고 **"관리자 권한으로 실행"**을 선택하여 실행해야 합니다. 이는 Docker 실행에 필요한 권한을 얻기 위함입니다.
+    -   이 스크립트는 백그라운드에서 GROBID Docker 컨테이너만 시작합니다. Ollama LLM 서버는 설치 후 자동으로 실행되므로 별도로 시작할 필요가 없습니다.
 
 ### 5.2. 파이프라인 실행
 

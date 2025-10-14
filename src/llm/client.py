@@ -7,7 +7,7 @@ class LLMClient:
     A client to interact with the local llamafile server, which is compatible
     with the OpenAI API.
     """
-    def __init__(self, base_url="http://127.0.0.1:8080/v1"):
+    def __init__(self, base_url="http://127.0.0.1:11434/v1"):
         """
         Initializes the OpenAI client to connect to the local server.
         Args:
@@ -18,7 +18,7 @@ class LLMClient:
             api_key="sk-no-key-required"  # API key is not needed for local server
         )
 
-    def get_completion(self, messages, model="gpt-3.5-turbo", temperature=0.7):
+    def get_completion(self, messages, model="gemma2", temperature=0.7):
         """
         Gets a completion from the local LLM.
 
@@ -39,8 +39,8 @@ class LLMClient:
             )
             return completion.choices[0].message.content
         except openai.APIConnectionError as e:
-            print(f"Error connecting to the llamafile server at {self.client.base_url}.")
-            print("Please ensure the server is running with: .\your_model.llamafile --server -ngl 999")
+            print(f"Error connecting to the Ollama server at {self.client.base_url}.")
+            print("Please ensure the Ollama application is running.")
             return None
 
 if __name__ == '__main__':

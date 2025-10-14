@@ -195,7 +195,7 @@ def main():
             pub_year_node = article.find(".//PubDate/Year")
             pub_year = int(pub_year_node.text) if pub_year_node is not None and pub_year_node.text.isdigit() else current_year + 1 # Default to future if year is missing or invalid
             
-            if pub_year < current_year: # Only include articles published before the current year
+            if pub_year <= current_year: # Only include articles published up to the current year
                 filtered_articles_elements.append(article)
         
         if not filtered_articles_elements:
@@ -225,7 +225,7 @@ def main():
         # --- 3. PDF Downloading --- #
         print("\nStep 3: Downloading PDFs")
         pdf_dir = os.path.join(DATA_DIR, "pdf")
-        pdf_download_status = downloader.download_pdfs_from_xml(filtered_articles_xml, pdf_dir) # Use filtered XML
+        pdf_download_status = downloader.download_pdfs_from_xml(xml_path, pdf_dir) # Use filtered XML path
 
         # Update articles.csv with PDF download status
         print("\nUpdating articles.csv with PDF download status...")

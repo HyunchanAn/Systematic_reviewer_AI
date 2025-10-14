@@ -47,7 +47,6 @@ def download_pdfs_from_xml(xml_path, output_dir):
     Parses a PubMed XML file, extracts DOIs, and attempts to download open-access PDFs.
     Returns a dictionary of PMID to download status.
     """
-    print(f"--- Starting PDF download process from {xml_path} ---")
     os.makedirs(output_dir, exist_ok=True)
 
     try:
@@ -55,59 +54,48 @@ def download_pdfs_from_xml(xml_path, output_dir):
         root = tree.getroot()
     except ET.ParseError as e:
         print(f"Error: Failed to parse XML file at {xml_path}. {e}")
-        return {} # Return empty dict on error
+        return {}
 
     articles = root.findall(".//PubmedArticle")
     total_articles = len(articles)
-    print(f"Found {total_articles} articles in the XML file.")
-    
-    download_status = {} # Dictionary to store PMID -> status
+    if total_articles == 0:
+        return {}
+
+    download_status = {}
     download_count = 0
     for i, article in enumerate(articles):
         pmid_node = article.find(".//PMID")
         pmid = pmid_node.text if pmid_node is not None else f"unknown_{i+1}"
         
-        # Find the DOI which is crucial for Unpaywall
         doi_node = article.find(".//ArticleId[@IdType='doi']")
         doi = doi_node.text if doi_node is not None else None
         
-        print(f"\n[{i+1}/{total_articles}] Processing PMID: {pmid}")
         if not doi:
-            print("  - DOI not found for this article. Skipping.")
             download_status[pmid] = "DOI Not Found"
             continue
         
-        print(f"  - Found DOI: {doi}")
         pdf_url = get_pdf_url_from_doi(doi)
         
         if not pdf_url:
-            print("  - No open-access PDF link found via Unpaywall.")
             download_status[pmid] = "No OA PDF Link"
             continue
 
-        print(f"  - Found PDF link: {pdf_url}")
         output_filename = os.path.join(output_dir, f"{pmid}.pdf")
 
         if os.path.exists(output_filename):
-            print(f"  - PDF already exists at {output_filename}. Skipping download.")
             download_status[pmid] = "Already Downloaded"
             download_count += 1
             continue
 
-        print(f"  - Downloading to {output_filename}...")
         if download_pdf(pdf_url, output_filename):
             download_status[pmid] = "Downloaded"
             download_count += 1
-            print("  - Download successful.")
         else:
             download_status[pmid] = "Download Failed"
-            print("  - Download failed.")
         
-        # Be polite to the API by waiting a second between requests
         time.sleep(1)
 
-    print(f"\n--- PDF Download Process Complete ---")
-    print(f"Successfully downloaded or found {download_count} of {total_articles} articles.")
+    print(f"PDF 다운로드 시도 완료: 총 {total_articles}개 중 {download_count}개 성공 또는 이미 존재.")
     return download_status
 
 if __name__ == '__main__':
