@@ -4,7 +4,7 @@
 
 ## 2. 주요 기능 및 구성 요소
 
--   **문헌 검색 및 수집 (Ingestion)**: PubMed API를 활용하여 정확한 검색 문법과 날짜 필터링을 통해 키워드 기반으로 관련 논문의 메타데이터를 수집합니다.
+-   **문헌 검색 및 수집 (Ingestion)**: PubMed API를 활용하여 정확한 검색 문법과 날짜 필터링을 통해 키워드 기반으로 관련 논문의 메타데이터를 수집하고, 총 검색 결과 수를 사용자에게 제시하여 가져올 논문 수를 직접 설정할 수 있도록 합니다. 또한, 검색된 논문 중 미래 출판 예정 논문은 자동으로 필터링합니다.
 -   **PDF 다운로드 (PDF Download)**: 검색된 논문의 DOI를 기반으로 Unpaywall API를 통해 오픈 액세스 PDF를 자동으로 찾아 다운로드합니다.
 -   **데이터 관리 (Data Management)**: 이전 실행 데이터를 감지하고 사용자 확인 후 안전하게 초기화하는 기능 및 XML 데이터를 CSV 형식으로 변환하여 저장하는 기능을 제공합니다.
 -   PDF 파싱 (Parsing): GROBID를 이용해 PDF 논문을 구조화된 TEI/XML 형식으로 변환하여 텍스트, 저자, 초록, 참고문헌 등을 분리합니다.
@@ -85,7 +85,7 @@
         ```bash
         python main.py
         ```
-    -   스크립트는 설정된 PICOS를 기반으로 PubMed 검색을 수행하고, 결과를 `data/raw/articles.xml`, `data/tables/retrieved_pmids.csv`, `data/tables/articles.csv`에 저장하며, 오픈 액세스 PDF를 `data/pdf/`에 다운로드합니다.
+    -   스크립트는 설정된 PICOS를 기반으로 PubMed 검색을 수행하고, **총 검색 결과 수를 사용자에게 제시하여 가져올 논문 수를 입력받습니다.** 이후 결과를 `data/raw/articles.xml`, `data/tables/retrieved_pmids.csv`, `data/tables/articles.csv`에 저장하며, 오픈 액세스 PDF를 `data/pdf/`에 다운로드합니다. **이 과정에서 미래 출판 예정 논문은 자동으로 필터링됩니다.**
 
 ### 5.3. 데이터 초기화
 

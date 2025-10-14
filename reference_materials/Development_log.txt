@@ -201,16 +201,28 @@
 ### 07. 데이터 초기화 기능 개선 및 CSV 출력 추가
 
 1.  이전 작업 데이터 확인 및 초기화 기능 구현:
-    -   `main.py` 실행 시 `data` 폴더에 이전 작업 흔적이 있는지 확인하는 로직 추가함.
+    -   `main.py` 실행 시 `data` 폴더에 이전 작업 흔적이 있는지 확인하는 로직을 추가함.
     -   사용자에게 초기화 여부를 묻고, 동의 시 데이터를 정리하도록 구현함.
     -   안전한 데이터 초기화 로직으로 개선: `shutil.rmtree` 대신, `data` 폴더 내의 생성된 파일(`articles.xml`, `retrieved_pmids.csv`, `articles.csv`) 및 `pdf` 폴더의 내용물만 삭제하고, `readme.md`와 같은 비생성 파일 및 디렉터리 구조는 유지하도록 수정함.
     -   데이터 초기화 로직 분리: 이 안전한 초기화 로직을 `src/utils/data_manager.py` 모듈의 `clear_generated_data_files()` 함수로 분리하여 재사용성을 높임.
     -   `main.py`의 `check_and_clear_previous_run()` 함수가 `data_manager.clear_generated_data_files()`를 호출하도록 변경함.
 
 2.  별도 데이터 초기화 스크립트 (`clear_data.py`) 생성:
-    -   프로젝트 루트에 `clear_data.py` 스크립트를 생성하여 언제든지 생성된 데이터를 안전하게 초기화할 수 있도록 함.
+    -   프로젝트 루트에 `clear_data.py` 스크립트를 생성하여, `python clear_data.py` 명령으로 언제든지 생성된 데이터를 안전하게 초기화할 수 있도록 함.
 
 3.  XML 데이터 CSV 변환 및 저장 기능 추가:
     -   `articles.xml`의 내용을 읽기 쉬운 형태로 제공하기 위해 `src/parse/pubmed_parser.py` 모듈을 새로 생성함.
     -   `pubmed_parser.py`는 PubMed XML에서 PMID, DOI, 제목, 저널, 출판 연도, 초록 등의 핵심 정보를 추출하여 `articles.csv` 파일로 저장하는 기능을 구현함.
     -   `main.py` 파이프라인에 `articles.xml` 저장 직후 `pubmed_parser`를 호출하여 `data/tables/articles.csv`를 생성하는 단계를 추가함.
+
+### 08. 검색 결과 수 사용자 설정 및 미래 논문 필터링 강화
+
+1.  검색 결과 수 사용자 설정 기능 구현:
+    -   `main.py`에서 PubMed 검색 시 총 검색 결과 수를 사용자에게 알려주고, 그중 몇 개의 논문을 가져올지 직접 입력받도록 기능을 추가함.
+    -   `src/ingest/pubmed.py`의 `fetch_pmids` 함수가 PMIDs 목록과 함께 총 검색 결과 수(`total_count`)를 반환하도록 수정함.
+    -   사용자 입력 유효성 검사 로직을 포함하여 안정성을 높임.
+
+2.  미래 출판 예정 논문 필터링 강화:
+    -   PubMed API의 `datetype` 필터만으로는 미래 출판 예정 논문(`pub_year`가 현재 연도와 같거나 큰 논문)을 완전히 걸러내기 어려운 문제를 확인.
+    -   `main.py`에서 `articles_xml`을 가져온 후, 각 논문의 `pub_year`를 확인하여 현재 연도보다 크거나 같은 논문들을 파이프라인에서 제외하도록 로직을 추가함.
+    -   필터링된 XML 데이터만 `pubmed_parser`와 `downloader`에 전달하도록 파이프라인을 개선함.

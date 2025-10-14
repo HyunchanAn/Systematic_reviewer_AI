@@ -45,6 +45,7 @@ def download_pdf(pdf_url, output_path):
 def download_pdfs_from_xml(xml_path, output_dir):
     """
     Parses a PubMed XML file, extracts DOIs, and attempts to download open-access PDFs.
+    Returns a dictionary of PMID to download status.
     """
     print(f"--- Starting PDF download process from {xml_path} ---")
     os.makedirs(output_dir, exist_ok=True)
@@ -54,12 +55,13 @@ def download_pdfs_from_xml(xml_path, output_dir):
         root = tree.getroot()
     except ET.ParseError as e:
         print(f"Error: Failed to parse XML file at {xml_path}. {e}")
-        return
+        return {} # Return empty dict on error
 
     articles = root.findall(".//PubmedArticle")
     total_articles = len(articles)
     print(f"Found {total_articles} articles in the XML file.")
     
+    download_status = {} # Dictionary to store PMID -> status
     download_count = 0
     for i, article in enumerate(articles):
         pmid_node = article.find(".//PMID")
@@ -72,6 +74,7 @@ def download_pdfs_from_xml(xml_path, output_dir):
         print(f"\n[{i+1}/{total_articles}] Processing PMID: {pmid}")
         if not doi:
             print("  - DOI not found for this article. Skipping.")
+            download_status[pmid] = "DOI Not Found"
             continue
         
         print(f"  - Found DOI: {doi}")
@@ -79,6 +82,7 @@ def download_pdfs_from_xml(xml_path, output_dir):
         
         if not pdf_url:
             print("  - No open-access PDF link found via Unpaywall.")
+            download_status[pmid] = "No OA PDF Link"
             continue
 
         print(f"  - Found PDF link: {pdf_url}")
@@ -86,14 +90,17 @@ def download_pdfs_from_xml(xml_path, output_dir):
 
         if os.path.exists(output_filename):
             print(f"  - PDF already exists at {output_filename}. Skipping download.")
+            download_status[pmid] = "Already Downloaded"
             download_count += 1
             continue
 
         print(f"  - Downloading to {output_filename}...")
         if download_pdf(pdf_url, output_filename):
+            download_status[pmid] = "Downloaded"
             download_count += 1
             print("  - Download successful.")
         else:
+            download_status[pmid] = "Download Failed"
             print("  - Download failed.")
         
         # Be polite to the API by waiting a second between requests
@@ -101,6 +108,7 @@ def download_pdfs_from_xml(xml_path, output_dir):
 
     print(f"\n--- PDF Download Process Complete ---")
     print(f"Successfully downloaded or found {download_count} of {total_articles} articles.")
+    return download_status
 
 if __name__ == '__main__':
     # This allows the script to be run directly for testing purposes.

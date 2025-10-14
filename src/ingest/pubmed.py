@@ -8,17 +8,7 @@ EUTILS_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
 def fetch_pmids(query, max_ret=100, api_key=None, sort='pub_date', mindate=None, maxdate=None):
     """
     Fetches a list of PubMed IDs (PMIDs) for a given search query.
-
-    Args:
-        query (str): The search query string.
-        max_ret (int): The maximum number of PMIDs to retrieve.
-        api_key (str, optional): Your NCBI API key.
-        sort (str, optional): The sort order. Defaults to 'pub_date' for newest first.
-        mindate (str, optional): Start date in YYYY/MM/DD format.
-        maxdate (str, optional): End date in YYYY/MM/DD format.
-
-    Returns:
-        list: A list of PMID strings, or an empty list if the search fails.
+    Returns a tuple: (list of PMIDs, total count of PMIDs found).
     """
     print(f"Searching PubMed for query: {query}")
     search_url = f"{EUTILS_BASE_URL}esearch.fcgi"
@@ -32,22 +22,22 @@ def fetch_pmids(query, max_ret=100, api_key=None, sort='pub_date', mindate=None,
     if api_key:
         params['api_key'] = api_key
     
-    # Add date range parameters if provided
     if mindate and maxdate:
-        params['datetype'] = 'pdat' # Use publication date
+        params['datetype'] = 'edat' # Use Entrez Date (date added to PubMed)
         params['mindate'] = mindate
         params['maxdate'] = maxdate
 
     try:
         response = requests.get(search_url, params=params)
-        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+        response.raise_for_status()
         data = response.json()
         pmids = data.get('esearchresult', {}).get('idlist', [])
-        print(f"Found {len(pmids)} PMIDs.")
-        return pmids
+        total_count = int(data.get('esearchresult', {}).get('count', 0)) # Get total count
+        print(f"Found {len(pmids)} PMIDs (Total: {total_count}).")
+        return pmids, total_count # Return both
     except requests.exceptions.RequestException as e:
         print(f"An error occurred during PubMed search: {e}")
-        return []
+        return [], 0
 
 def fetch_abstracts(pmids, api_key=None):
     """
