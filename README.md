@@ -4,7 +4,9 @@
 
 ## 2. 주요 기능 및 구성 요소
 
--   문헌 검색 및 수집 (Ingestion): PubMed API를 활용하여 키워드 기반으로 관련 논문의 메타데이터를 수집합니다.
+-   **문헌 검색 및 수집 (Ingestion)**: PubMed API를 활용하여 정확한 검색 문법과 날짜 필터링을 통해 키워드 기반으로 관련 논문의 메타데이터를 수집합니다.
+-   **PDF 다운로드 (PDF Download)**: 검색된 논문의 DOI를 기반으로 Unpaywall API를 통해 오픈 액세스 PDF를 자동으로 찾아 다운로드합니다.
+-   **데이터 관리 (Data Management)**: 이전 실행 데이터를 감지하고 사용자 확인 후 안전하게 초기화하는 기능 및 XML 데이터를 CSV 형식으로 변환하여 저장하는 기능을 제공합니다.
 -   PDF 파싱 (Parsing): GROBID를 이용해 PDF 논문을 구조화된 TEI/XML 형식으로 변환하여 텍스트, 저자, 초록, 참고문헌 등을 분리합니다.
 -   LLM 기반 보조 (LLM Assistance): 로컬 `llamafile`로 실행되는 Gemma 3 모델을 통해 논문 내용 요약, PICO 프레임워크 기반 정보 추출 등을 보조합니다.
 -   스크리닝 (Screening): ASReview의 액티브 러닝(Active Learning) 기술을 연동하여, 최소한의 라벨링으로 대규모 문헌을 효율적으로 스크리닝하는 것을 목표로 합니다.
@@ -12,25 +14,31 @@
 
 ## 3. 프로젝트 구조
 
+프로젝트의 주요 디렉터리 및 파일 구조는 다음과 같습니다.
+
 ```
 .
-├── data/             # 데이터 (raw, tei, tables)
-├── models/           # LLM 모델 파일(.llamafile) 저장 위치
-├── notebooks/        # 실험 및 테스트용 Jupyter 노트북
-├── src/              # 메인 소스 코드
-│   ├── ingest/       # 데이터 수집 모듈
-│   ├── parse/        # PDF 파싱 모듈
-│   ├── screen/       # 스크리닝 보조 모듈
-│   ├── llm/          # LLM 클라이언트
-│   ├── extract/      # 정보 추출 모듈
-│   ├── rob/          # RoB 보조 모듈
-│   └── report/       # 보고서 생성 모듈
-├── tools/            # 외부 오픈소스 도구 (ASReview, GROBID, RobotReviewer)
-├── picos_config.yaml # PICOS 연구 질문 설정 파일
-├── start_services.bat# 핵심 서비스(GROBID, LLM 서버) 시작 스크립트 (Windows용)
-├── main.py           # 메인 실행 스크립트
-├── requirements.txt  # Python 의존성 목록
-└── reference_materials/ # 개발 로그, 메모, 예제 파일 등 보조 자료
+├── data/             # 파이프라인 실행 중 생성되는 모든 데이터를 저장하는 폴더.
+│                     # raw (PubMed XML), tei (GROBID 파싱 결과), tables (CSV), pdf (다운로드된 PDF) 등의 하위 폴더를 포함합니다.
+├── models/           # 대규모 언어 모델(LLM) 파일(.llamafile, .gguf, .pth 등)을 저장하는 폴더.
+│                     # Git에서는 모델 파일 자체는 무시하고 폴더 구조만 유지합니다.
+├── notebooks/        # 데이터 분석, 모델 실험 및 테스트를 위한 Jupyter 노트북 파일들을 저장합니다.
+├── src/              # 파이프라인의 핵심 로직을 담고 있는 소스 코드 디렉터리.
+│   ├── ingest/       # PubMed API를 통한 문헌 메타데이터 수집 및 PDF 다운로드 관련 모듈을 포함합니다.
+│   ├── parse/        # PDF 파싱(GROBID 연동) 및 XML 데이터를 CSV로 변환하는 모듈을 포함합니다.
+│   ├── screen/       # ASReview와 연동하여 문헌 스크리닝을 보조하는 모듈입니다. (현재 플레이스홀더)
+│   ├── llm/          # 로컬 LLM(Gemma 3) 클라이언트와 관련된 모듈을 포함합니다.
+│   ├── extract/      # 논문에서 PICO 정보 등 핵심 데이터를 추출하는 모듈입니다. (현재 플레이스홀더)
+│   ├── rob/          # RobotReviewer를 활용한 편향 위험 평가 보조 모듈입니다. (현재 플레이스홀더)
+│   ├── report/       # 최종 보고서 및 메타분석 결과 생성을 위한 모듈입니다. (현재 플레이스홀더)
+│   └── utils/        # 프로젝트 전반에 걸쳐 사용되는 공통 유틸리티 함수(예: 데이터 관리)를 포함합니다.
+├── picos_config.yaml # PICOS(Population, Intervention, Comparison, Outcome, Study Design) 연구 질문을 정의하는 설정 파일입니다.
+│                     # 예시가 포함되어 있으며 Git에서 추적됩니다.
+├── start_services.bat# GROBID Docker 컨테이너 및 로컬 LLM 서버를 시작하는 Windows용 배치 스크립트입니다.
+├── clear_data.py     # 생성된 데이터를 안전하게 초기화하는 독립 실행형 유틸리티 스크립트입니다.
+├── main.py           # 전체 체계적 문헌고찰 파이프라인의 흐름을 제어하는 메인 실행 스크립트입니다.
+├── requirements.txt  # 프로젝트에 필요한 Python 라이브러리 의존성 목록입니다.
+└── reference_materials/ # 개발 로그, 메모, 예제 파일 등 프로젝트 보조 자료를 저장하는 폴더입니다.
 ```
 
 ## 4. 설치 및 환경 설정
@@ -63,18 +71,31 @@
 
 ### 5.2. 파이프라인 실행
 
-1.  **연구 질문(PICOS) 설정**
+1.  **이전 데이터 확인 및 초기화**
+    -   `main.py` 실행 시 `data` 폴더에 이전 작업 데이터가 감지되면, 사용자에게 초기화 여부를 묻습니다.
+    -   'y'를 입력하면 이전 데이터(raw, tables, pdf 폴더의 내용)가 안전하게 삭제되고 파이프라인이 시작됩니다.
+    -   'n'을 입력하면 작업이 중단됩니다.
+
+2.  **연구 질문(PICOS) 설정**
     -   프로젝트 루트에 있는 `picos_config.yaml` 파일을 열어 자신의 연구 주제에 맞는 PICOS 질문을 입력하고 저장합니다.
     -   **팁**: `main.py` 실행 시 `picos_config.yaml`이 존재하면 해당 설정을 사용할지 묻고, 없거나 사용하지 않겠다고 하면 대화형으로 입력받을 수 있습니다.
 
-2.  **메인 파이프라인 실행**
+3.  **메인 파이프라인 실행**
     -   모든 서비스가 실행 중인 상태에서, 터미널을 열고 프로젝트 루트에서 다음 명령어로 메인 스크립트를 실행합니다.
         ```bash
         python main.py
         ```
-    -   스크립트는 설정된 PICOS를 기반으로 PubMed 검색을 수행하고, 결과를 `data/` 폴더에 저장합니다.
+    -   스크립트는 설정된 PICOS를 기반으로 PubMed 검색을 수행하고, 결과를 `data/raw/articles.xml`, `data/tables/retrieved_pmids.csv`, `data/tables/articles.csv`에 저장하며, 오픈 액세스 PDF를 `data/pdf/`에 다운로드합니다.
 
-### 5.3. 재사용 워크플로우 (새로운 연구 주제 시작 시)
+### 5.3. 데이터 초기화
+
+-   파이프라인 실행 없이 생성된 데이터만 초기화하고 싶을 경우, 다음 명령어를 사용합니다.
+    ```bash
+    python clear_data.py
+    ```
+-   이 스크립트는 `data` 폴더 내의 생성된 파일들만 안전하게 삭제하고, 폴더 구조나 `readme.md` 파일은 보존합니다.
+
+### 5.4. 재사용 워크플로우 (새로운 연구 주제 시작 시)
 
 이 깃허브 저장소는 파이프라인 '템플릿'으로 사용됩니다. 새로운 연구 주제로 작업을 시작할 때는 다음 절차를 따르세요.
 

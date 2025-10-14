@@ -208,7 +208,7 @@
     -   `main.py`의 `check_and_clear_previous_run()` 함수가 `data_manager.clear_generated_data_files()`를 호출하도록 변경함.
 
 2.  별도 데이터 초기화 스크립트 (`clear_data.py`) 생성:
-    -   프로젝트 루트에 `clear_data.py` 스크립트를 생성하여, `python clear_data.py` 명령으로 언제든지 생성된 데이터를 안전하게 초기화할 수 있도록 함.
+    -   프로젝트 루트에 `clear_data.py` 스크립트를 생성하여 언제든지 생성된 데이터를 안전하게 초기화할 수 있도록 함.
 
 3.  XML 데이터 CSV 변환 및 저장 기능 추가:
     -   `articles.xml`의 내용을 읽기 쉬운 형태로 제공하기 위해 `src/parse/pubmed_parser.py` 모듈을 새로 생성함.
