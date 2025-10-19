@@ -267,12 +267,12 @@
     -   모델 재선정: Gemma 3가 아직 Ollama에 등록되지 않은 점을 고려하여, 현 시점에서 사용 가능하며 원래 계획과 가장 유사한 최신 모델인 `gemma2:9b-instruct`를 최종 선택함. 9B 파라미터 크기는 해당 PC의 GPU/RAM 환경에서 성능과 속도의 최적 균형을 제공할 것으로 기대됨.
 
 3.  향후 작업 계획 (Ollama 기반):
-    -   1. (사용자) Windows용 Ollama를 공식 웹사이트에서 다운로드 및 설치.
-    -   2. (AI) `ollama pull gemma2:9b-instruct` 명령을 통해 모델 데이터를 다운로드.
-    -   3. (AI) `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인.
-    -   4. (AI) `src/llm/client.py`를 수정하여, LLM 서버의 `base_url`을 Ollama의 기본 주소(`http://127.0.0.1:11434/v1`)로 변경하고, 요청 모델명을 `gemma2:9b-instruct`로 수정. (완료)
+    -   1. Windows용 Ollama를 공식 웹사이트에서 다운로드 및 설치.
+    -   2. `ollama pull gemma2:9b-instruct` 명령을 통해 모델 데이터를 다운로드.
+    -   3. `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인.
+    -   4. `src/llm/client.py`를 수정하여, LLM 서버의 `base_url`을 Ollama의 기본 주소(`http://127.0.0.1:11434/v1`)로 변경하고, 요청 모델명을 `gemma2:9b-instruct`로 수정. (완료)
         -   확인: `src/llm/client.py`의 `base_url`이 `http://127.0.0.1:11434/v1`로, 모델명이 `gemma2`로 변경되었음을 확인.
-    -   5. (AI) `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인. (완료)
+    -   5. `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인. (완료)
         -   확인: `start_services.bat`에서 `.llamafile` 관련 코드가 제거되고, Ollama 자동 실행에 대한 메시지로 업데이트되었음을 확인.
     -   6. `main.py` 실행 및 LLM 연결 확인: `main.py`를 실행하여 "LLM client is connected and ready." 메시지를 성공적으로 수신함. (완료)
 
