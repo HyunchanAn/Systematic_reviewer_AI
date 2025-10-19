@@ -1,6 +1,9 @@
 @echo off
 :: (This script starts the core services required for the Systematic Reviewer AI project.)
 
+:: Change directory to the script's location to ensure relative paths work correctly
+cd /d "%~dp0"
+
 echo.
 echo --- Starting Core Services for Systematic Reviewer AI ---
 echo.

@@ -23,7 +23,8 @@ def process_pdf(pdf_path, timeout=60):
     print(f"Processing {os.path.basename(pdf_path)} with GROBID...")
     try:
         with open(pdf_path, 'rb') as f:
-            files = {'inputFile': (os.path.basename(pdf_path), f, 'application/pdf', {'Expires': '0'})}
+            # Using a simpler dictionary format for the `files` parameter
+            files = {'inputFile': f}
             
             # Make the request to the GROBID server
             response = requests.post(GROBID_API_URL, files=files, timeout=timeout)
