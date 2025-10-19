@@ -232,21 +232,21 @@
 ### 09. 서비스 실행 및 Windows 환경 디버깅
 
 1.  `main.py` 파이프라인 디버깅
-    -   **문제점**: `main.py` 실행 시, `pub_year < current_year` 필터로 인해 2025년에 출판된 모든 논문이 제외되는 문제 발생.
-    -   **해결책**: `main.py`의 연도 필터링 로직을 `pub_year <= current_year`로 수정하여, 현재 연도에 출판된 논문도 포함하도록 변경함.
-    -   **문제점**: PDF 다운로드 단계에서 `downloader.py`가 파일 경로 대신 XML 문자열을 인자로 받아 터미널에 과도한 로그를 출력하는 버그 발견.
-    -   **해결책**: `main.py`에서 `downloader.py`를 호출하는 부분을 수정하여, 저장된 XML 파일의 경로(`xml_path`)를 전달하도록 변경함. 또한, `downloader.py` 내부의 상세 로그를 간결한 요약 정보만 출력하도록 정리함.
+    -   문제점: `main.py` 실행 시, `pub_year < current_year` 필터로 인해 2025년에 출판된 모든 논문이 제외되는 문제 발생.
+    -   해결책: `main.py`의 연도 필터링 로직을 `pub_year <= current_year`로 수정하여, 현재 연도에 출판된 논문도 포함하도록 변경함.
+    -   문제점: PDF 다운로드 단계에서 `downloader.py`가 파일 경로 대신 XML 문자열을 인자로 받아 터미널에 과도한 로그를 출력하는 버그 발견.
+    -   해결책: `main.py`에서 `downloader.py`를 호출하는 부분을 수정하여, 저장된 XML 파일의 경로(`xml_path`)를 전달하도록 변경함. 또한, `downloader.py` 내부의 상세 로그를 간결한 요약 정보만 출력하도록 정리함.
 
 2.  `start_services.bat` 실행 환경 디버깅
-    -   **문제점**: `start_services.bat` 실행 시, Windows가 `.llamafile`을 실행 파일로 인식하지 못하고 '연결 프로그램' 대화상자를 띄우는 문제 발생.
-    -   **해결책**: 공식 문서를 통해 Windows에서는 모델 파일의 확장자를 `.exe`로 변경해야 함을 확인. 하지만, `*.exe` 와 `*.llamafile.exe` 사이에서 혼동이 발생함.
-    -   **문제점**: 파일명을 `*.exe`로 변경 후 스크립트를 수정했으나 여전히 파일을 찾지 못함.
-    -   **해결책**: 재확인 결과, 정확한 명명 규칙은 `*.llamafile.exe`임을 확인함. `models` 폴더의 파일명을 `google_gemma-3-12b-it-Q4_K_M.llamafile.exe`로 변경하고, `start_services.bat`가 해당 파일을 참조하도록 최종 수정함.
-    -   **문제점**: 수정된 스크립트를 실행했으나 '액세스가 거부되었습니다' 오류와 함께 Docker 및 LLM 프로세스가 실행되지 않음.
-    -   **진단**: Docker 데몬 접근 및 새 프로세스 실행에 필요한 권한 부족으로 판단됨.
-    -   **문제점**: 관리자 권한으로 실행 시 "이 PC에서는 이 앱을 실행할 수 없습니다" 오류 발생.
-    -   **진단**: 64비트 전용으로 빌드된 LLM 실행 파일을 32비트 Windows에서 실행하려 할 때 발생하는 전형적인 오류로 초기 추정했으나, 사용자의 현재 위치가 고사양 '집 컴퓨터'임을 확인. 따라서 파일 손상 또는 보안 프로그램의 차단일 가능성이 높음.
-    -   **최종 해결책 제안**:
+    -   문제점: `start_services.bat` 실행 시, Windows가 `.llamafile`을 실행 파일로 인식하지 못하고 '연결 프로그램' 대화상자를 띄우는 문제 발생.
+    -   해결책: 공식 문서를 통해 Windows에서는 모델 파일의 확장자를 `.exe`로 변경해야 함을 확인. 하지만, `*.exe` 와 `*.llamafile.exe` 사이에서 혼동이 발생함.
+    -   문제점: 파일명을 `*.exe`로 변경 후 스크립트를 수정했으나 여전히 파일을 찾지 못함.
+    -   해결책: 재확인 결과, 정확한 명명 규칙은 `*.llamafile.exe`임을 확인함. `models` 폴더의 파일명을 `google_gemma-3-12b-it-Q4_K_M.llamafile.exe`로 변경하고, `start_services.bat`가 해당 파일을 참조하도록 최종 수정함.
+    -   문제점: 수정된 스크립트를 실행했으나 '액세스가 거부되었습니다' 오류와 함께 Docker 및 LLM 프로세스가 실행되지 않음.
+    -   진단: Docker 데몬 접근 및 새 프로세스 실행에 필요한 권한 부족으로 판단됨.
+    -   문제점: 관리자 권한으로 실행 시 "이 PC에서는 이 앱을 실행할 수 없습니다" 오류 발생.
+    -   진단: 64비트 전용으로 빌드된 LLM 실행 파일을 32비트 Windows에서 실행하려 할 때 발생하는 전형적인 오류로 초기 추정했으나, 사용자의 현재 위치가 고사양 '집 컴퓨터'임을 확인. 따라서 파일 손상 또는 보안 프로그램의 차단일 가능성이 높음.
+    -   최종 해결책 제안:
         -   1순위: `models` 폴더의 기존 모델 파일을 삭제하고 Hugging Face 등 신뢰할 수 있는 출처에서 파일을 다시 다운로드하여 정확한 이름(`google_gemma-3-12b-it-Q4_K_M.llamafile.exe`)으로 저장.
         -   2순위: `start_services.bat`를 '관리자 권한으로 실행'.
 
@@ -255,23 +255,46 @@
 ### 10. LLM 실행 방식 변경: .llamafile에서 Ollama로 전환
 
 1.  `.llamafile` 실행 문제 심층 분석:
-    -   **문제점**: `start_services.bat`를 관리자 권한으로 실행해도 `.llamafile.exe`가 '액세스가 거부되었습니다' 또는 '이 PC에서는 이 앱을 실행할 수 없습니다' 오류를 내며 실행되지 않는 문제가 지속됨.
-    -   **원인 분석**:
+    -   문제점: `start_services.bat`를 관리자 권한으로 실행해도 `.llamafile.exe`가 '액세스가 거부되었습니다' 또는 '이 PC에서는 이 앱을 실행할 수 없습니다' 오류를 내며 실행되지 않는 문제가 지속됨.
+    -   원인 분석:
         -   1차 원인 (파일 손상): 재 다운로드 후 파일 크기가 비정상적임을 확인, `curl`을 이용해 재시도하여 정상 파일(약 9.5GB)을 확보했으나 여전히 실행 불가.
         -   2차 원인 (Windows 보안 정책): 파일 속성의 '차단 해제' 옵션이 없음을 확인. `takeown`, `icacls`로 파일 권한을 강제 부여해도 실패. 파일을 `C:\llm_test`와 같은 일반 경로로 옮겨 실행해도 실패.
-        -   최종 원인 추정: `systeminfo`를 통해 **`App Control for Business policy: Enforced`** 정책이 활성화된 것을 확인. 이는 허가되지 않은 앱의 실행을 원천적으로 차단하는 강력한 보안 기능으로, 이 정책이 `.llamafile.exe`의 실행을 막고 있는 것으로 최종 결론내림.
+        -   최종 원인 추정: `systeminfo`를 통해 `App Control for Business policy: Enforced` 정책이 활성화된 것을 확인. 이는 허가되지 않은 앱의 실행을 원천적으로 차단하는 강력한 보안 기능으로, 이 정책이 `.llamafile.exe`의 실행을 막고 있는 것으로 최종 결론내림.
 
 2.  대안 수립 및 모델 재선정:
-    -   `.llamafile` 방식이 현 PC 환경과 호환되지 않음을 확인하고, 대안으로 **Ollama 프레임워크**를 도입하기로 결정함. Ollama는 시스템에 정식 설치되는 방식이라 보안 정책을 우회할 수 있고, 안정적인 서비스 운영이 가능함.
-    -   PC 사양 재확인: `systeminfo` 및 `Get-CimInstance`를 통해 **NVIDIA GeForce RTX 4060 Laptop GPU**와 16GB RAM을 확인.
-    -   모델 재선정: Gemma 3가 아직 Ollama에 등록되지 않은 점을 고려하여, 현 시점에서 사용 가능하며 원래 계획과 가장 유사한 최신 모델인 **`gemma2:9b-instruct`**를 최종 선택함. 9B 파라미터 크기는 해당 PC의 GPU/RAM 환경에서 성능과 속도의 최적 균형을 제공할 것으로 기대됨.
+    -   `.llamafile` 방식이 현 PC 환경과 호환되지 않음을 확인하고, 대안으로 Ollama 프레임워크를 도입하기로 결정함. Ollama는 시스템에 정식 설치되는 방식이라 보안 정책을 우회할 수 있고, 안정적인 서비스 운영이 가능함.
+    -   PC 사양 재확인: `systeminfo` 및 `Get-CimInstance`를 통해 NVIDIA GeForce RTX 4060 Laptop GPU와 16GB RAM을 확인.
+    -   모델 재선정: Gemma 3가 아직 Ollama에 등록되지 않은 점을 고려하여, 현 시점에서 사용 가능하며 원래 계획과 가장 유사한 최신 모델인 `gemma2:9b-instruct`를 최종 선택함. 9B 파라미터 크기는 해당 PC의 GPU/RAM 환경에서 성능과 속도의 최적 균형을 제공할 것으로 기대됨.
 
 3.  향후 작업 계획 (Ollama 기반):
     -   1. (사용자) Windows용 Ollama를 공식 웹사이트에서 다운로드 및 설치.
     -   2. (AI) `ollama pull gemma2:9b-instruct` 명령을 통해 모델 데이터를 다운로드.
     -   3. (AI) `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인.
     -   4. (AI) `src/llm/client.py`를 수정하여, LLM 서버의 `base_url`을 Ollama의 기본 주소(`http://127.0.0.1:11434/v1`)로 변경하고, 요청 모델명을 `gemma2:9b-instruct`로 수정. (완료)
-        -   **확인**: `src/llm/client.py`의 `base_url`이 `http://127.0.0.1:11434/v1`로, 모델명이 `gemma2`로 변경되었음을 확인.
+        -   확인: `src/llm/client.py`의 `base_url`이 `http://127.0.0.1:11434/v1`로, 모델명이 `gemma2`로 변경되었음을 확인.
     -   5. (AI) `start_services.bat`에서 `.llamafile` 실행 부분을 제거하고, Ollama가 시스템 부팅 시 자동으로 시작되므로 별도 실행 로직이 필요 없음을 확인. (완료)
-        -   **확인**: `start_services.bat`에서 `.llamafile` 관련 코드가 제거되고, Ollama 자동 실행에 대한 메시지로 업데이트되었음을 확인.
+        -   확인: `start_services.bat`에서 `.llamafile` 관련 코드가 제거되고, Ollama 자동 실행에 대한 메시지로 업데이트되었음을 확인.
     -   6. `main.py` 실행 및 LLM 연결 확인: `main.py`를 실행하여 "LLM client is connected and ready." 메시지를 성공적으로 수신함. (완료)
+
+##### 2025.10.20 (4일차) 집 #####
+
+### 11. PDF 다운로드 로직 심층 분석 및 최종 워크플로우 확립
+
+1.  PDF 다운로드 문제 재확인:
+    -   문제점: PubMed 검색 정렬 순서를 최신순(`pub_date`)에서 관련도순(`relevance`)으로 변경했음에도 불구하고, 여전히 Unpaywall API가 `422 Unprocessable Entity` 오류를 반환하며 PDF 다운로드가 0건인 현상 발생.
+    -   원인 분석: 단순히 최신 논문이라 DOI가 활성화되지 않은 문제가 아닐 수 있음을 인지하고, 코드 외부에서 API를 직접 호출하여 문제의 원인을 파악하기로 함.
+
+2.  대체 다운로드 전략 수립 및 테스트:
+    -   1차 진단 (Unpaywall API 직접 호출): `web_fetch` 도구를 사용해 Unpaywall API를 직접 호출한 결과, 코드와 동일하게 `422` 오류가 반환됨. 이를 통해 파이썬 코드의 요청 방식이 아닌, Unpaywall 서비스가 해당 DOI를 처리할 수 없는 문제임을 확인함.
+    -   2차 전략 (PubMed Central 연동): Unpaywall의 대안으로, 논문 데이터에 PMCID(PubMed Central ID)가 있는 경우 PMC에서 직접 PDF를 다운로드하는 로직을 `downloader.py`에 추가함.
+    -   2차 진단 (PMC API 직접 호출): PMC 연동 로직 테스트 결과, API가 PDF(`application/pdf`)가 아닌 일반 텍스트(`text/plain`)를 반환하는 문제를 발견. `web_fetch`로 직접 확인한 결과, API가 PDF 대신 논문 요약문을 보내주고 있음을 확인함. 이는 논문의 라이선스 또는 저장 형태의 제약으로 인해 API가 PDF를 제공하지 않는 경우임.
+
+3.  최종 결론 및 워크플로우 확립:
+    -   결론: 자동화된 방식(Unpaywall, PMC e-fetch)으로는 현재 검색된 논문들의 PDF를 확보하기 어렵다는 결론에 도달함. 이는 코드의 문제가 아니라, 논문 자체의 라이선스 및 온라인 제공 형태의 한계 때문임.
+    -   하이브리드 워크플로우 확립: 파이프라인의 한계를 인정하고, 자동화와 수동 작업을 결합한 현실적인 워크플로우를 최종적으로 확립함.
+        -   1. (자동) `main.py`를 실행하여 접근 가능한 모든 오픈 액세스 PDF를 최대한 다운로드.
+        -   2. (수동) 다운로드가 실패한 중요 논문은 사용자가 직접 PDF를 다운로드.
+        -   3. (수동) 다운로드한 PDF 파일명을 `data/tables/articles.csv`에 있는 PMID에 맞춰 `{PMID}.pdf` 형식으로 변경.
+        -   4. (수동) 이름이 변경된 PDF를 `data/pdf/` 폴더에 이동.
+        -   5. (자동) `main.py`를 재실행하면, 파이프라인이 수동으로 추가된 PDF를 자동으로 감지하여 이후 단계(GROBID 파싱, LLM 추출)를 수행.
+    -   이러한 내용을 `README.md`에 명확히 문서화하여 사용자가 혼동하지 않도록 안내하기로 결정함.

@@ -2,10 +2,11 @@ import os
 import pandas as pd
 import yaml
 import shutil
+import json
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET # Added for XML parsing
 from src.ingest import pubmed, downloader
-from src.parse import pubmed_parser
+from src.parse import pubmed_parser, grobid_client, tei_parser
 from src.llm import client as llm_client
 from src.utils import data_manager
 
@@ -13,6 +14,7 @@ from src.utils import data_manager
 DATA_DIR = "data"
 RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
 TABLES_DIR = os.path.join(DATA_DIR, "tables")
+TEI_DIR = os.path.join(DATA_DIR, "tei") # For GROBID output
 CONFIG_PATH = "picos_config.yaml"
 
 def check_and_clear_previous_run():
@@ -96,6 +98,7 @@ def setup_directories():
     """Ensures that the necessary data directories exist."""
     os.makedirs(RAW_DATA_DIR, exist_ok=True)
     os.makedirs(TABLES_DIR, exist_ok=True)
+    os.makedirs(TEI_DIR, exist_ok=True)
 
 def main():
     """
@@ -139,7 +142,8 @@ def main():
         search_query, 
         max_ret=1, # Fetch only 1 to get the total count efficiently
         mindate=start_date,
-        maxdate=end_date
+        maxdate=end_date,
+        sort='relevance' # Sort by relevance instead of date
     )
 
     if total_count == 0:
@@ -171,7 +175,8 @@ def main():
         search_query, 
         max_ret=max_ret_user,
         mindate=start_date,
-        maxdate=end_date
+        maxdate=end_date,
+        sort='relevance' # Sort by relevance instead of date
     )
 
     if not pmids: # Should not happen if total_count > 0 and max_ret_user > 0
@@ -237,19 +242,112 @@ def main():
         except Exception as e:
             print(f"Error updating articles.csv with PDF download status: {e}")
 
+        # --- 3.5. Parse PDFs with GROBID --- #
+        print("\nStep 3.5: Parsing PDFs with GROBID")
+        # Find successfully downloaded PDFs
+        downloaded_pdfs = [k for k, v in pdf_download_status.items() if v == "Downloaded" or v == "Already Downloaded"]
+        
+        if not downloaded_pdfs:
+            print("No downloaded PDFs to process with GROBID.")
+        else:
+            print(f"Found {len(downloaded_pdfs)} PDFs to process.")
+            for pmid in downloaded_pdfs:
+                pdf_path = os.path.join(pdf_dir, f"{pmid}.pdf")
+                if os.path.exists(pdf_path):
+                    tei_xml = grobid_client.process_pdf(pdf_path)
+                    if tei_xml:
+                        tei_path = os.path.join(TEI_DIR, f"{pmid}.xml")
+                        try:
+                            with open(tei_path, 'w', encoding='utf-8') as f:
+                                f.write(tei_xml)
+                            print(f"  - Saved TEI XML to {tei_path}")
+                        except Exception as e:
+                            print(f"  - Error saving TEI XML for {pmid}: {e}")
+
     # --- 4. Screening (Placeholder) --- #
     print("\nStep 4: Screening (Placeholder)")
     print("This step would involve using ASReview. See `tools/asreview`.")
 
-    # --- 5. Data Extraction & LLM Summarization (Placeholder) --- #
-    print("\nStep 5: Data Extraction and Summarization (Placeholder)")
-    print("This step requires downloading PDFs, parsing with GROBID, and using the LLM.")
+    # --- 5. Data Extraction & LLM Summarization ---
+    print("\nStep 5: Data Extraction and Summarization")
     
     llm = llm_client.LLMClient()
-    if llm.get_completion([{"role": "system", "content": "Respond with OK if you are ready."}, {"role": "user", "content": "Are you ready?"}]):
-        print("LLM client is connected and ready.")
+    if not llm.get_completion([{"role": "system", "content": "Respond with OK if you are ready."}, {"role": "user", "content": "Are you ready?"}]):
+        print("LLM client is not connected. Skipping data extraction.")
+        print("\n--- Pipeline Scaffolding Complete ---")
+        return
+
+    print("LLM client is connected. Starting data extraction...")
+    
+    tei_files = []
+    if os.path.exists(TEI_DIR):
+        tei_files = [os.path.join(TEI_DIR, f) for f in os.listdir(TEI_DIR) if f.endswith('.xml')]
+    
+    if not tei_files:
+        print("No TEI XML files found to extract data from.")
     else:
-        print("LLM client is not connected. Skipping summarization.")
+        extracted_data = []
+        system_prompt = "You are an expert assistant in biomedical research. Your task is to extract structured information from the full text of a research paper."
+        
+        for tei_path in tei_files:
+            pmid = os.path.basename(tei_path).replace('.xml', '')
+            print(f"\n--- Processing article PMID: {pmid} ---")
+            
+            full_text = tei_parser.extract_text_from_tei(tei_path)
+            
+            if not full_text:
+                print("  - Could not extract text from TEI file. Skipping.")
+                continue
+            
+            # Prepare the prompt for the LLM
+            # Using a simplified text snippet for brevity in the prompt
+            text_snippet = (full_text[:8000] + '...') if len(full_text) > 8000 else full_text
+
+            user_prompt = f"""
+From the following research paper text, please extract the Population, Intervention, Comparison, and Outcome (PICO) elements.
+Also, identify the study design.
+Please provide the output in a JSON format with the keys "population", "intervention", "comparison", "outcome", and "study_design".
+If an element is not mentioned, please use an empty string "".
+
+TEXT:
+---
+{text_snippet}
+---
+"""
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+            
+            print("  - Sending text to LLM for PICO extraction...")
+            response_content = llm.get_completion(messages)
+            
+            if response_content:
+                print("  - Received response from LLM.")
+                try:
+                    # The response might be in a markdown code block, so clean it up
+                    clean_response = response_content.strip().replace('```json', '').replace('```', '').strip()
+                    pico_data = json.loads(clean_response)
+                    pico_data['pmid'] = pmid # Add pmid for reference
+                    extracted_data.append(pico_data)
+                    print(f"  - Successfully extracted: {pico_data}")
+                except (json.JSONDecodeError, TypeError) as e:
+                    print(f"  - Error parsing LLM response for {pmid}: {e}")
+                    print(f"  - Raw response: {response_content}")
+            else:
+                print(f"  - No response from LLM for {pmid}.")
+
+        if extracted_data:
+            # Save the extracted data to a CSV file
+            extracted_df = pd.DataFrame(extracted_data)
+            # Reorder columns
+            cols = ['pmid'] + [c for c in extracted_df.columns if c != 'pmid']
+            extracted_df = extracted_df[cols]
+            
+            extracted_csv_path = os.path.join(TABLES_DIR, "extracted_pico.csv")
+            extracted_df.to_csv(extracted_csv_path, index=False, encoding='utf-8-sig')
+            print(f"\nSaved all extracted PICO data to {extracted_csv_path}")
 
     print("\n--- Pipeline Scaffolding Complete ---")
 

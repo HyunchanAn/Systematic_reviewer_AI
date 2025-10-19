@@ -1,89 +1,79 @@
-
+import os
 import requests
 
-class GrobidClient:
+# The default URL for the GROBID service started with docker-compose
+GROBID_URL = "http://localhost:8070"
+GROBID_API_URL = f"{GROBID_URL}/api/processFulltextDocument"
+
+def process_pdf(pdf_path, timeout=60):
     """
-    A client to interact with a running GROBID service.
-    Assumes GROBID is running in a Docker container and accessible at the given host.
+    Sends a PDF file to the GROBID service to be processed and returns the TEI XML.
+
+    Args:
+        pdf_path (str): The full path to the PDF file.
+        timeout (int): The timeout for the request in seconds.
+
+    Returns:
+        str: The TEI XML as a string if successful, None otherwise.
     """
-    def __init__(self, host="http://localhost:8070"):
-        """
-        Initializes the GROBID client.
-        Args:
-            host (str): The address of the GROBID service.
-        """
-        self.host = host
-        self.api_url = f"{host}/api/processFulltextDocument"
+    if not os.path.exists(pdf_path):
+        print(f"Error: PDF file not found at {pdf_path}")
+        return None
 
-    def check_server(self):
-        """Checks if the GROBID server is running and accessible."""
-        try:
-            response = requests.get(f"{self.host}/api/isalive")
-            if response.status_code == 200 and response.text == "true":
-                print("GROBID server is alive and running.")
-                return True
-            else:
-                print(f"GROBID server responded with status {response.status_code}.")
-                return False
-        except requests.ConnectionError:
-            print("Failed to connect to GROBID server. Please ensure it is running.")
-            return False
-
-    def process_pdf(self, pdf_path):
-        """
-        Processes a PDF file to extract structured TEI XML.
-
-        Args:
-            pdf_path (str): The local path to the PDF file.
-
-        Returns:
-            str: The TEI XML as a string, or None if processing fails.
-        """
-        print(f"Processing PDF: {pdf_path}")
-        try:
-            with open(pdf_path, 'rb') as f:
-                files = {'input': f}
-                # Other parameters can be added, e.g., 'consolidateHeader': '1'
-                response = requests.post(self.api_url, files=files)
-                response.raise_for_status()
-                print("Successfully processed PDF and received TEI XML.")
+    print(f"Processing {os.path.basename(pdf_path)} with GROBID...")
+    try:
+        with open(pdf_path, 'rb') as f:
+            files = {'inputFile': (os.path.basename(pdf_path), f, 'application/pdf', {'Expires': '0'})}
+            
+            # Make the request to the GROBID server
+            response = requests.post(GROBID_API_URL, files=files, timeout=timeout)
+            
+            if response.status_code == 200:
+                print("  - Successfully processed by GROBID.")
                 return response.text
-        except FileNotFoundError:
-            print(f"Error: The file was not found at {pdf_path}")
-            return None
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while processing the PDF with GROBID: {e}")
-            return None
+            else:
+                print(f"  - Error processing with GROBID. Status: {response.status_code}, Response: {response.text[:500]}")
+                return None
+    except requests.exceptions.RequestException as e:
+        print(f"  - GROBID service connection failed: {e}")
+        print(f"    Is the GROBID service running? Try running 'start_services.bat'.")
+        return None
 
 if __name__ == '__main__':
-    # Example of how to use the GrobidClient
-    # This requires a running GROBID Docker container.
-    # It also requires a PDF file to test with.
+    # This allows the script to be run directly for testing purposes.
+    print("--- Testing GROBID Client ---")
     
-    print("Initializing GROBID client...")
-    grobid_client = GrobidClient()
+    # Setup paths assuming the script is in src/parse
+    current_dir = os.path.dirname(__file__)
+    project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+    pdf_dir = os.path.join(project_root, 'data', 'pdf')
+    tei_dir = os.path.join(project_root, 'data', 'tei')
     
-    # 1. Check if the server is running
-    if grobid_client.check_server():
-        # 2. Create a dummy PDF file for testing purposes, as we can't assume one exists.
-        # In a real scenario, this path would come from the downloaded articles.
-        dummy_pdf_path = "dummy_example.pdf"
-        try:
-            # A minimal valid PDF content
-            pdf_content = b'%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 3 3]>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000053 00000 n\n0000000102 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n149\n%%EOF'
-            with open(dummy_pdf_path, 'wb') as f:
-                f.write(pdf_content)
-            print(f"Created a dummy PDF for testing: {dummy_pdf_path}")
+    os.makedirs(tei_dir, exist_ok=True)
 
-            # 3. Process the dummy PDF
-            tei_xml = grobid_client.process_pdf(dummy_pdf_path)
-            if tei_xml:
-                print("\n--- Received TEI XML (first 500 chars) ---")
-                print(tei_xml[:500] + "...")
-                print("-----------------------------------------")
-        finally:
-            # 4. Clean up the dummy file
-            import os
-            if os.path.exists(dummy_pdf_path):
-                os.remove(dummy_pdf_path)
-                print(f"Cleaned up dummy PDF: {dummy_pdf_path}")
+    # Find the first PDF in the data/pdf directory to use for the test
+    test_pdf_path = None
+    if os.path.exists(pdf_dir):
+        for fname in os.listdir(pdf_dir):
+            if fname.lower().endswith('.pdf'):
+                test_pdf_path = os.path.join(pdf_dir, fname)
+                break
+
+    if not test_pdf_path:
+        print("\nTest failed: No PDF found in 'data/pdf' to test with.")
+        print("Please run 'python main.py' first to download some PDFs.")
+    else:
+        print(f"\nFound test PDF: {os.path.basename(test_pdf_path)}")
+        
+        # Process the PDF
+        tei_xml = process_pdf(test_pdf_path)
+        
+        if tei_xml:
+            # Save the output for inspection
+            output_filename = os.path.basename(test_pdf_path).replace('.pdf', '.xml')
+            output_path = os.path.join(tei_dir, output_filename)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(tei_xml)
+            print(f"\nTest successful. Saved TEI XML output to: {output_path}")
+        else:
+            print("\nTest failed. Could not process the PDF.")

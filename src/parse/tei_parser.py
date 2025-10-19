@@ -1,0 +1,63 @@
+import xml.etree.ElementTree as ET
+import os
+
+def extract_text_from_tei(xml_path):
+    """
+    Parses a TEI XML file and extracts the plain text content from the body.
+
+    Args:
+        xml_path (str): The path to the TEI XML file.
+
+    Returns:
+        str: The concatenated plain text content, or an empty string if parsing fails.
+    """
+    try:
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        
+        # Define the TEI namespace
+        ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+        
+        # Find the body of the text
+        body = root.find('.//tei:body', ns)
+        
+        if body is None:
+            return ""
+            
+        # Iterate through all text nodes in the body and join them
+        text_content = ''.join(body.itertext())
+        
+        # Clean up excessive whitespace and newlines
+        return ' '.join(text_content.split())
+        
+    except ET.ParseError as e:
+        print(f"Error parsing TEI XML file {xml_path}: {e}")
+        return ""
+    except Exception as e:
+        print(f"An unexpected error occurred while processing {xml_path}: {e}")
+        return ""
+
+if __name__ == '__main__':
+    # Example usage
+    # Assumes there is a test file in data/tei/
+    print("--- Testing TEI Parser ---")
+    current_dir = os.path.dirname(__file__)
+    project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+    tei_dir = os.path.join(project_root, 'data', 'tei')
+    
+    test_xml_path = None
+    if os.path.exists(tei_dir):
+        for fname in os.listdir(tei_dir):
+            if fname.lower().endswith('.xml'):
+                test_xml_path = os.path.join(tei_dir, fname)
+                break
+    
+    if test_xml_path:
+        print(f"--- Extracting text from {os.path.basename(test_xml_path)} ---")
+        text = extract_text_from_tei(test_xml_path)
+        if text:
+            print(text[:1000] + "...")
+        else:
+            print("Failed to extract text.")
+    else:
+        print("No TEI XML file found in data/tei/ for testing.")

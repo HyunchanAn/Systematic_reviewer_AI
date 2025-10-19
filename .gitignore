@@ -18,13 +18,17 @@ __pycache__/
 # These are ignored to keep the repository as a clean template.
 # Each research project will have its own set of these files.
 
-# picos_config.yaml is now tracked as an example.
+# Ignore contents of data directories, but keep the structure via README files
+/data/pdf/*
+/data/raw/*
+!/data/raw/README.md
+/data/tables/*
+!/data/tables/README.md
+/data/tei/*
+!/data/tei/README.md
 
-# Ignore specific generated files within data/
-/data/raw/articles.xml
-/data/tables/retrieved_pmids.csv
-/data/tables/articles.csv
-/data/pdf/*.pdf
+# Ignore backup files
+*.bak
 
 # OS-specific files
 .DS_Store

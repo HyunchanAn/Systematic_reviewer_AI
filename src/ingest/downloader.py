@@ -3,31 +3,30 @@ import requests
 import xml.etree.ElementTree as ET
 import time
 
-# Unpaywall API requires an email address for their free tier
-UNPAYWALL_EMAIL = "test@example.com"
-
-def get_pdf_url_from_doi(doi):
+def get_unpaywall_pdf_url(doi):
     """
     Queries the Unpaywall API to find a direct PDF link for a given DOI.
     """
     if not doi:
         return None
     try:
-        url = f"https://api.unpaywall.org/v2/{doi}?email={UNPAYWALL_EMAIL}"
+        # Using a more compliant email address as recommended by Unpaywall
+        email = "systematic-reviewer-ai@example.com"
+        url = f"https://api.unpaywall.org/v2/{doi}?email={email}"
         response = requests.get(url, timeout=20)
         response.raise_for_status()
         data = response.json()
         
-        # Check for the best open-access location provided by Unpaywall
         if data.get("best_oa_location") and data["best_oa_location"].get("url_for_pdf"):
             return data["best_oa_location"]["url_for_pdf"]
-    except requests.exceptions.RequestException as e:
-        print(f"  - Unpaywall API request failed for DOI {doi}: {e}")
+    except requests.exceptions.RequestException:
+        # This is expected for non-existent DOIs, so we don't need to be too loud.
+        pass
     except Exception as e:
-        print(f"  - An unexpected error occurred while processing DOI {doi}: {e}")
+        print(f"  - An unexpected error occurred while processing DOI {doi} with Unpaywall: {e}")
     return None
 
-def download_pdf(pdf_url, output_path):
+def download_pdf_from_url(pdf_url, output_path):
     """
     Downloads a PDF from a URL and saves it to the specified path.
     """
@@ -42,9 +41,43 @@ def download_pdf(pdf_url, output_path):
         print(f"  - Failed to download PDF from {pdf_url}: {e}")
     return False
 
+def try_pmc_download(pmcid, output_path, timeout=60):
+    """
+    Attempts to download a PDF directly from PubMed Central using its PMCID.
+    """
+    if not pmcid:
+        return False
+    
+    print(f"  - Trying PubMed Central with PMCID: {pmcid}")
+    fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+    params = {
+        'db': 'pmc',
+        'id': pmcid,
+        'rettype': 'pdf',
+        'retmode': 'binary'
+    }
+    try:
+        response = requests.post(fetch_url, data=params, stream=True, timeout=timeout)
+        
+        if 'application/pdf' not in response.headers.get('Content-Type', ''):
+            print(f"  - PMC did not return a PDF. Content-Type: {response.headers.get('Content-Type')}")
+            return False
+
+        response.raise_for_status()
+        
+        with open(output_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"  - SUCCESS: Downloaded PDF from PMC.")
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"  - Failed to download from PMC: {e}")
+        return False
+
 def download_pdfs_from_xml(xml_path, output_dir):
     """
-    Parses a PubMed XML file, extracts DOIs, and attempts to download open-access PDFs.
+    Parses a PubMed XML file, extracts DOIs and PMCIDs, and attempts to download open-access PDFs
+    using a fallback strategy (Unpaywall -> PMC).
     Returns a dictionary of PMID to download status.
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -61,46 +94,63 @@ def download_pdfs_from_xml(xml_path, output_dir):
     if total_articles == 0:
         return {}
 
+    print(f"Attempting to download PDFs for {total_articles} articles using fallback strategy (Unpaywall -> PMC)...")
     download_status = {}
     download_count = 0
+    
     for i, article in enumerate(articles):
         pmid_node = article.find(".//PMID")
         pmid = pmid_node.text if pmid_node is not None else f"unknown_{i+1}"
-        
-        doi_node = article.find(".//ArticleId[@IdType='doi']")
-        doi = doi_node.text if doi_node is not None else None
-        
-        if not doi:
-            download_status[pmid] = "DOI Not Found"
-            continue
-        
-        pdf_url = get_pdf_url_from_doi(doi)
-        
-        if not pdf_url:
-            download_status[pmid] = "No OA PDF Link"
-            continue
+        print(f"\n[{i+1}/{total_articles}] Processing PMID: {pmid}")
 
         output_filename = os.path.join(output_dir, f"{pmid}.pdf")
-
         if os.path.exists(output_filename):
+            print("  - PDF already exists.")
             download_status[pmid] = "Already Downloaded"
             download_count += 1
             continue
 
-        if download_pdf(pdf_url, output_filename):
-            download_status[pmid] = "Downloaded"
-            download_count += 1
-        else:
-            download_status[pmid] = "Download Failed"
+        downloaded = False
         
-        time.sleep(1)
+        # --- Strategy 1: Try Unpaywall ---
+        doi_node = article.find(".//ArticleId[@IdType='doi']")
+        doi = doi_node.text if doi_node is not None else None
+        if doi:
+            pdf_url = get_unpaywall_pdf_url(doi)
+            if pdf_url:
+                print(f"  - Found Unpaywall OA link for DOI {doi}. Attempting download...")
+                if download_pdf_from_url(pdf_url, output_filename):
+                    download_status[pmid] = "Downloaded (Unpaywall)"
+                    downloaded = True
+                else:
+                    download_status[pmid] = "Download Failed (Unpaywall)"
+        
+        # --- Strategy 2: Try PubMed Central (if Unpaywall failed) ---
+        if not downloaded:
+            pmc_node = article.find(".//ArticleId[@IdType='pmc']")
+            pmcid = pmc_node.text if pmc_node is not None else None
+            if pmcid:
+                if try_pmc_download(pmcid, output_filename):
+                    download_status[pmid] = "Downloaded (PMC)"
+                    downloaded = True
+                else:
+                    # Don't set a final failure status yet, let the outer block handle it
+                    pass
+        
+        if not downloaded:
+            print("  - No open access source found via Unpaywall or PMC.")
+            download_status[pmid] = "No OA Source Found"
 
-    print(f"PDF 다운로드 시도 완료: 총 {total_articles}개 중 {download_count}개 성공 또는 이미 존재.")
+        if downloaded:
+            download_count += 1
+
+        time.sleep(1) # Be polite to APIs
+
+    print(f"\nPDF 다운로드 시도 완료: 총 {total_articles}개 중 {download_count}개 성공 또는 이미 존재.")
     return download_status
 
 if __name__ == '__main__':
     # This allows the script to be run directly for testing purposes.
-    # It assumes the script is in src/ingest and the data is in data/
     current_dir = os.path.dirname(__file__)
     project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
     xml_file_path = os.path.join(project_root, 'data', 'raw', 'articles.xml')
