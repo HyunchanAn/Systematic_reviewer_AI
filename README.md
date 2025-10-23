@@ -9,7 +9,7 @@
 -   **데이터 관리 (Data Management)**: 이전 실행 데이터를 감지하고 사용자 확인 후 안전하게 초기화하는 기능 및 XML 데이터를 CSV 형식으로 변환하여 저장하는 기능을 제공합니다.
 -   **PDF 파싱 (Parsing)**: GROBID를 이용해 PDF 논문을 구조화된 TEI/XML 형식으로 변환하여 텍스트, 저자, 초록, 참고문헌 등을 분리합니다.
 -   **LLM 기반 정보 추출 (LLM-based Extraction)**: 로컬 Ollama 기반의 `gemma2:9b-instruct` 모델을 통해 파싱된 논문 텍스트에서 PICO 프레임워크 기반의 핵심 정보를 JSON 형식으로 추출하고 CSV 파일로 저장합니다.
--   **스크리닝 (Screening)**: ASReview의 액티브 러닝(Active Learning) 기술을 연동하여, 최소한의 라벨링으로 대규모 문헌을 효율적으로 스크리닝하는 것을 목표로 합니다. (현재 플레이스홀더)
+-   **스크리닝 준비 (Screening Preparation)**: `main.py` 실행 과정에서 ASReview LAB UI를 사용하여 스크리닝 프로젝트를 수동으로 생성하는 방법에 대한 자세한 안내를 제공합니다. 자동화 대신 사용자에게 명확한 가이드를 제시하여 휴먼-인더-루프(human-in-the-loop) 워크플로우를 지원합니다.
 -   **RoB 평가 보조 (Risk of Bias)**: RobotReviewer를 보조 도구로 활용하여 편향 위험 평가의 초안을 생성합니다. (현재 플레이스홀더)
 
 ## 3. 프로젝트 구조
@@ -83,7 +83,8 @@
         ```bash
         python main.py
         ```
-    -   스크립트는 `picos_config.yaml`을 기반으로 전체 자동화 파이프라인을 순차적으로 수행합니다.
+    -   스크립트는 `picos_config.yaml`을 기반으로 파이프라인을 순차적으로 수행합니다.
+    -   **참고**: 4단계 스크리닝 과정에서는 스크립트가 자동으로 멈추고, ASReview LAB UI를 통해 사용자가 직접 프로젝트를 생성하도록 안내합니다. 자세한 내용은 스크립트 실행 시 출력되는 메시지를 참고하세요.
 
 ### 5.3. (중요) 수동 PDF 추가 워크플로우
 
@@ -105,4 +106,4 @@
 
 ## 6. 개발 로그
 
--   프로젝트의 상세한 진행 과정과 계획은 `reference_materials/Development_log.txt` 파일에 기록되어 있습니다.
+-   프로젝트의 상세한 진행 과정과 계획은 `reference_materials/Development_log.txt` 파일에 기록되어 있습니다. 최근 ASReview 연동 과정에서 발생한 의존성 문제를 해결하고, 올바른 확장 패키지(`asreview-makita`)를 찾아 적용하는 디버깅 과정이 포함되었습니다.

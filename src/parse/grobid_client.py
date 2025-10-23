@@ -24,7 +24,8 @@ def process_pdf(pdf_path, timeout=60):
     try:
         with open(pdf_path, 'rb') as f:
             # Using a simpler dictionary format for the `files` parameter
-            files = {'inputFile': f}
+            clean_filename = os.path.basename(pdf_path)
+            files = {'input': (clean_filename, f, 'application/pdf')}
             
             # Make the request to the GROBID server
             response = requests.post(GROBID_API_URL, files=files, timeout=timeout)

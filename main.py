@@ -1,4 +1,6 @@
 import os
+import subprocess
+import re
 import pandas as pd
 import yaml
 import shutil
@@ -16,6 +18,7 @@ RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
 TABLES_DIR = os.path.join(DATA_DIR, "tables")
 TEI_DIR = os.path.join(DATA_DIR, "tei") # For GROBID output
 CONFIG_PATH = "picos_config.yaml"
+ASREVIEW_PROJECT_PATH = os.path.join(DATA_DIR, "asreview_project.asreview") # Define ASReview project path
 
 def check_and_clear_previous_run():
     """Checks for specific data files from a previous run and asks the user if they want to clear them."""
@@ -26,6 +29,10 @@ def check_and_clear_previous_run():
         choice = input("새로운 검색을 시작하면 이전 데이터(raw, tables, pdf의 내용)가 삭제됩니다. 계속하시겠습니까? [y/n]: ").lower()
         if choice == 'y':
             data_manager.clear_generated_data_files()
+            # Also remove the ASReview project file if it exists
+            if os.path.exists(ASREVIEW_PROJECT_PATH):
+                os.remove(ASREVIEW_PROJECT_PATH)
+                print(f"Removed previous ASReview project file: {ASREVIEW_PROJECT_PATH}")
             return True
         else:
             print("작업을 중단합니다.")
@@ -214,7 +221,7 @@ def main():
         filtered_articles_xml = ET.tostring(filtered_root, encoding='unicode')
         
         print(f"Filtered to {len(filtered_articles_elements)} articles with pub_year < {current_year}.")
-        # --- End Filtering --- #
+        # --- End Filtering ---
 
         # Save the raw XML (now filtered)
         xml_path = os.path.join(RAW_DATA_DIR, "articles.xml")
@@ -264,9 +271,23 @@ def main():
                         except Exception as e:
                             print(f"  - Error saving TEI XML for {pmid}: {e}")
 
-    # --- 4. Screening (Placeholder) --- #
-    print("\nStep 4: Screening (Placeholder)")
-    print("This step would involve using ASReview. See `tools/asreview`.")
+    # --- 4. Screening with ASReview --- #
+    print("\nStep 4: Screening with ASReview")
+    csv_path = os.path.join(TABLES_DIR, "articles.csv")
+    if not os.path.exists(csv_path):
+        print(f"Error: articles.csv not found at {csv_path}. Cannot proceed with ASReview.")
+    else:
+        print("\n--- 수동 작업 필요: ASReview 프로젝트 생성 ---")
+        print("라벨이 없는 데이터셋의 ASReview 프로젝트 생성은 ASReview LAB 인터페이스를 통해 수동으로 진행해야 합니다.")
+        print("\n방법:")
+        print("1. 새 터미널을 엽니다.")
+        print("2. 다음 명령어를 실행합니다: asreview lab")
+        print("3. 웹 브라우저에 ASReview 대시보드가 열립니다.")
+        print("4. 'Create' 버튼을 클릭하여 새 프로젝트를 시작합니다.")
+        print("5. 스크리닝 모드로 'Oracle'을 선택합니다.")
+        print("6. 화면의 안내에 따라 진행하고, 데이터셋을 선택하라는 메시지가 나오면 아래 파일을 선택합니다:")
+        print(f"   {os.path.abspath(csv_path)}")
+        print("\n프로젝트를 생성하고 스크리닝을 완료한 후, 파이프라인의 다음 단계를 진행할 수 있습니다.")
 
     # --- 5. Data Extraction & LLM Summarization ---
     print("\nStep 5: Data Extraction and Summarization")
@@ -326,13 +347,19 @@ TEXT:
             if response_content:
                 print("  - Received response from LLM.")
                 try:
-                    # The response might be in a markdown code block, so clean it up
-                    clean_response = response_content.strip().replace('```json', '').replace('```', '').strip()
-                    pico_data = json.loads(clean_response)
-                    pico_data['pmid'] = pmid # Add pmid for reference
+                    # Use regex to find the JSON block, even with surrounding text
+                    json_match = re.search(r"```json\s*([\s\S]*?)\s*```", response_content)
+                    if json_match:
+                        json_str = json_match.group(1)
+                    else:
+                        # Fallback for when there's no markdown block, just the JSON
+                        json_str = response_content[response_content.find('{'):response_content.rfind('}')+1]
+                    
+                    pico_data = json.loads(json_str)
+                    picos_data['pmid'] = pmid # Add pmid for reference
                     extracted_data.append(pico_data)
                     print(f"  - Successfully extracted: {pico_data}")
-                except (json.JSONDecodeError, TypeError) as e:
+                except (json.JSONDecodeError, TypeError, AttributeError) as e:
                     print(f"  - Error parsing LLM response for {pmid}: {e}")
                     print(f"  - Raw response: {response_content}")
             else:
