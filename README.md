@@ -55,7 +55,7 @@
         -   Ollama 공식 웹사이트(https://ollama.com/)에서 Windows용 Ollama를 다운로드하여 설치합니다.
         -   설치 후, 터미널에서 다음 명령어를 실행하여 `gemma2:9b-instruct` 모델을 다운로드합니다.
             ```bash
-            ollama pull gemma2:9b-instruct
+            ollama pull gemma2
             ```
 
 3.  **Python 의존성 설치**
