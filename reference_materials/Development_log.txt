@@ -631,3 +631,41 @@
 
     - 문제점: `main.py`의 ASReview 프로젝트 수동 생성 안내문이 영어로 되어 있어, 다른 한글 출력 메시지들과 일관성이 떨어짐.
     - 해결책: 사용자의 제안에 따라, `main.py`의 Step 4에 있는 안내문 전체를 자연스러운 한국어로 번역하여 수정함.
+
+##### 2025.11.20 (7일차) #####
+
+### 21. 파이프라인 통합 테스트 및 버그 수정
+
+    - 서비스 상태 점검 및 Docker 실행:
+        - 파이프라인 테스트 전 `curl` 명령어로 서비스 상태를 점검함.
+        - Ollama는 정상 작동 중이었으나, GROBID는 Docker가 실행되지 않아 연결 실패함.
+        - 사용자가 Docker Desktop을 실행한 후, GROBID 서비스가 정상적으로 응답(`HTTP 200 OK`)함을 확인함.
+
+    - 파이프라인 실행 및 버그 수정:
+        - `main.py`를 실행하여 PubMed 검색부터 데이터 추출까지의 전체 흐름을 테스트함.
+        - LLM 정보 추출 단계에서 `NameError: name 'picos_data' is not defined` 오류 발생.
+        - 원인: 변수명 오타 (`picos_data` -> `pico_data`).
+        - 해결: `main.py`의 359번째 줄을 `pico_data['pmid'] = pmid`로 수정하여 해결함.
+
+    - 결과 검증:
+        - 수정 후 파이프라인 재실행 결과, 3개의 논문에 대해 PDF 다운로드(또는 기존 파일 사용), GROBID 파싱, LLM 정보 추출이 모두 성공적으로 완료됨.
+        - `data/tables/extracted_pico.csv` 파일에 PICO 요소와 Study Design이 올바르게 저장된 것을 확인함.
+
+### 22. 향후 작업 계획 (To-Do List)
+
+    - [ ] 스크리닝 자동화 고도화 (Screening Automation)
+        - 현재 수동 안내로 대체된 ASReview 단계를 `asreview-makita` 또는 Python API를 활용하여 자동화된 프로젝트 생성 및 실행으로 개선.
+        - 필요 시 ASReview 시뮬레이션 모드를 활용하여 성능 평가 진행.
+
+    - [ ] RoB 평가 모듈 구현 (Risk of Bias Assessment)
+        - 현재 플레이스홀더 상태인 `src/rob` 모듈 개발.
+        - RobotReviewer (BERT 기반) 또는 LLM을 활용하여 논문의 편향 위험을 자동으로 평가하고 결과를 저장하는 기능 추가.
+
+    - [ ] 보고서 생성 모듈 구현 (Reporting)
+        - `src/report` 모듈 개발.
+        - PRISMA 흐름도(Flow Diagram)를 자동으로 생성하여 이미지로 저장.
+        - 최종 추출된 데이터를 요약하여 보고서 형태(Markdown 또는 HTML)로 출력.
+
+    - [ ] 대규모 데이터 테스트 (Large-scale Testing)
+        - 소수(3개)의 논문이 아닌, 50~100개 이상의 논문을 대상으로 파이프라인의 안정성과 속도를 테스트.
+        - PDF 다운로드 실패율, 파싱 오류율 등을 분석하고 예외 처리 강화.

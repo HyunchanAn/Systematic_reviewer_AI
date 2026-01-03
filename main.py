@@ -356,7 +356,7 @@ TEXT:
                         json_str = response_content[response_content.find('{'):response_content.rfind('}')+1]
                     
                     pico_data = json.loads(json_str)
-                    picos_data['pmid'] = pmid # Add pmid for reference
+                    pico_data['pmid'] = pmid # Add pmid for reference
                     extracted_data.append(pico_data)
                     print(f"  - Successfully extracted: {pico_data}")
                 except (json.JSONDecodeError, TypeError, AttributeError) as e:
