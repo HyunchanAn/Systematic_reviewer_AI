@@ -1,109 +1,97 @@
+# Systematic Reviewer AI (SR-Gemma2)
+
 ## 1. 개요
 
-이 프로젝트는 체계적 문헌고찰(Systematic Review) 논문 작성 과정의 일부를 자동화하여 연구자의 부담을 경감시키는 AI 보조 파이프라인을 구축하는 것을 목표로 합니다. 로컬에서 구동되는 Ollama 기반의 Gemma 2 언어 모델을 기반으로, 문헌 검색, 스크리닝, 데이터 추출 등의 작업을 효율화합니다.
+이 프로젝트는 체계적 문헌고찰(Systematic Review) 논문 작성 과정의 일부를 자동화하여 연구자의 부담을 경감시키는 AI 보조 파이프라인을 구축하는 것을 목표로 합니다. 로컬에서 구동되는 Ollama 기반의 Gemma 2 언어 모델을 기반으로, 문헌 검색, 스크리닝, 데이터 추출, 비뚤림 위험 평가, 보고서 생성 등의 작업을 효율화합니다.
+
+최신 버전에서는 Streamlit 기반의 웹 UI를 제공하여 별도의 코드 수정 없이 직관적으로 파이프라인을 제어할 수 있습니다.
 
 ## 2. 주요 기능 및 구성 요소
 
--   **문헌 검색 및 수집 (Ingestion)**: PubMed API를 활용하여 정확한 검색 문법과 날짜 필터링을 통해 키워드 기반으로 관련 논문의 메타데이터를 수집하고, 총 검색 결과 수를 사용자에게 제시하여 가져올 논문 수를 직접 설정할 수 있도록 합니다. 또한, 검색된 논문 중 미래 출판 예정 논문은 자동으로 필터링합니다.
--   **PDF 다운로드 (PDF Download)**: 검색된 논문의 DOI 및 PMCID를 기반으로, Unpaywall과 PubMed Central(PMC) 두 가지 소스를 통해 오픈 액세스 PDF를 자동으로 찾아 다운로드하는 **대체 작동(fallback) 로직**을 갖추고 있습니다. (주의: 논문의 라이선스 정책에 따라 다운로드 성공률은 달라질 수 있습니다.)
--   **데이터 관리 (Data Management)**: 이전 실행 데이터를 감지하고 사용자 확인 후 안전하게 초기화하는 기능 및 XML 데이터를 CSV 형식으로 변환하여 저장하는 기능을 제공합니다.
--   **PDF 파싱 (Parsing)**: GROBID를 이용해 PDF 논문을 구조화된 TEI/XML 형식으로 변환하여 텍스트, 저자, 초록, 참고문헌 등을 분리합니다.
--   **LLM 기반 정보 추출 (LLM-based Extraction)**: 로컬 Ollama 기반의 `gemma2:9b-instruct` 모델을 통해 파싱된 논문 텍스트에서 PICO 프레임워크 기반의 핵심 정보를 JSON 형식으로 추출하고 CSV 파일로 저장합니다.
--   **스크리닝 준비 (Screening Preparation)**: `main.py` 실행 과정에서 ASReview LAB UI를 사용하여 스크리닝 프로젝트를 수동으로 생성하는 방법에 대한 자세한 안내를 제공합니다. 자동화 대신 사용자에게 명확한 가이드를 제시하여 휴먼-인더-루프(human-in-the-loop) 워크플로우를 지원합니다.
--   **RoB 평가 보조 (Risk of Bias)**: RobotReviewer를 보조 도구로 활용하여 편향 위험 평가의 초안을 생성합니다. (현재 플레이스홀더)
+-   문헌 검색 및 수집 (Ingestion): PubMed API를 활용하여 PICO 질문에 기반한 검색 쿼리를 자동 생성하고 문헌 메타데이터를 수집합니다. 미래 출판 예정 논문은 자동으로 필터링됩니다.
+-   자동 스크리닝 (Automated Screening): LLM을 활용하여 수집된 논문의 제목과 초록을 분석하고, 사전에 정의된 PICO 기준에 따라 포함/제외 여부를 자동으로 판별합니다.
+-   PDF 다운로드 (PDF Download): Unpaywall 및 PubMed Central(PMC)을 통해 오픈 액세스 PDF를 자동으로 다운로드합니다.
+-   PDF 파싱 (Parsing): GROBID를 이용해 PDF를 구조화된 TEI/XML로 변환하여 본문을 추출합니다.
+-   비뚤림 위험 평가 (RoB Assessment): LLM을 활용하여 전체 텍스트(Full Text)에서 5가지 영역(무작위 배정, 중재 이탈, 결측치, 결과 측정, 보고 비뚤림)에 대한 비뚤림 위험을 자동으로 평가합니다.
+-   데이터 추출 (Extraction): PICO 프레임워크 기반의 핵심 정보를 추출하여 CSV로 저장합니다.
+-   자동 보고서 생성 (Automated Reporting): 분석된 통계와 추출 결과를 바탕으로 PRISMA 흐름도가 포함된 마크다운(Markdown) 보고서를 생성합니다. 한국어 및 영어 보고서를 지원합니다.
+-   웹 인터페이스 (Web UI): Streamlit 기반의 대시보드를 통해 검색부터 보고서 생성까지의 전 과정을 시각적으로 관리할 수 있습니다.
 
 ## 3. 프로젝트 구조
-
-프로젝트의 주요 디렉터리 및 파일 구조는 다음과 같습니다.
 
 ```
 .
 ├── data/             # 파이프라인 실행 중 생성되는 모든 데이터를 저장하는 폴더.
-│                     # raw (PubMed XML), tei (GROBID 파싱 결과), tables (CSV), pdf (다운로드된 PDF) 등의 하위 폴더를 포함합니다.
-├── models/           # 대규모 언어 모델(LLM) 파일(.llamafile, .gguf, .pth 등)을 저장하는 폴더.
-│                     # Git에서는 모델 파일 자체는 무시하고 폴더 구조만 유지합니다.
-├── notebooks/        # 데이터 분석, 모델 실험 및 테스트를 위한 Jupyter 노트북 파일들을 저장합니다.
+├── models/           # 대규모 언어 모델 파일 저장 (Ollama 사용 시 불필요하나 구조 유지).
 ├── src/              # 파이프라인의 핵심 로직을 담고 있는 소스 코드 디렉터리.
-│   ├── ingest/       # PubMed API를 통한 문헌 메타데이터 수집 및 PDF 다운로드 관련 모듈을 포함합니다.
-│   ├── parse/        # PDF 파싱(GROBID 연동), XML/TEI 데이터 파싱 및 CSV 변환 모듈을 포함합니다.
-│   ├── screen/       # ASReview와 연동하여 문헌 스크리닝을 보조하는 모듈입니다. (현재 플레이스홀더)
-│   ├── llm/          # 로컬 LLM(Ollama) 클라이언트와 관련된 모듈을 포함합니다.
-│   ├── extract/      # 논문에서 PICO 정보 등 핵심 데이터를 추출하는 모듈입니다. (현재 플레이스홀더)
-│   ├── rob/          # RobotReviewer를 활용한 편향 위험 평가 보조 모듈입니다. (현재 플레이스홀더)
-│   ├── report/       # 최종 보고서 및 메타분석 결과 생성을 위한 모듈입니다. (현재 플레이스홀더)
-│   └── utils/        # 프로젝트 전반에 걸쳐 사용되는 공통 유틸리티 함수(예: 데이터 관리)를 포함합니다.
-├── picos_config.yaml # PICOS(Population, Intervention, Comparison, Outcome, Study Design) 연구 질문을 정의하는 설정 파일입니다.
-│                     # 예시가 포함되어 있으며 Git에서 추적됩니다.
-├── start_services.bat# GROBID Docker 컨테이너 및 로컬 LLM 서버를 시작하는 Windows용 배치 스크립트입니다.
-├── clear_data.py     # 생성된 데이터를 안전하게 초기화하는 독립 실행형 유틸리티 스크립트입니다.
-├── main.py           # 전체 체계적 문헌고찰 파이프라인의 흐름을 제어하는 메인 실행 스크립트입니다.
-├── requirements.txt  # 프로젝트에 필요한 Python 라이브러리 의존성 목록입니다.
-└── reference_materials/ # 개발 로그, 메모, 예제 파일 등 프로젝트 보조 자료를 저장하는 폴더입니다.
+│   ├── ingest/       # PubMed 검색 및 PDF 다운로드 모듈.
+│   ├── parse/        # GROBID 파싱 및 텍스트 추출 모듈.
+│   ├── screen/       # LLM 기반 자동 스크리닝 모듈.
+│   ├── rob/          # 비뚤림 위험(RoB) 평가 모듈.
+│   ├── llm/          # Ollama 클라이언트.
+│   ├── extract/      # 데이터 추출 모듈.
+│   ├── report/       # 보고서 생성 모듈.
+│   └── utils/        # 공통 유틸리티 함수.
+├── picos_config.yaml # PICO 연구 질문 설정 파일.
+├── app.py            # Streamlit 웹 애플리케이션 실행 파일.
+├── main.py           # CLI 기반 메인 실행 스크립트.
+├── requirements.txt  # Python 라이브러리 의존성 목록.
+└── reference_materials/ # 개발 로그 및 참고 자료.
 ```
 
 ## 4. 설치 및 환경 설정
 
-1.  **사전 요구사항**
+1.  사전 요구사항
     -   Git
     -   Python 3.9 이상
-    -   Docker Desktop
-    -   Ollama
+    -   Docker Desktop (GROBID 실행용)
+    -   Ollama (LLM 실행용)
 
-2.  **외부 도구 및 모델 준비**
-    -   이 프로젝트는 `git clone` 시 `tools` 디렉터리에 필요한 오픈소스 도구(ASReview, GROBID 등)를 함께 다운로드합니다.
-    -   **Ollama 설치 및 모델 다운로드**
-        -   Ollama 공식 웹사이트(https://ollama.com/)에서 Windows용 Ollama를 다운로드하여 설치합니다.
-        -   설치 후, 터미널에서 다음 명령어를 실행하여 `gemma2:9b-instruct` 모델을 다운로드합니다.
-            ```bash
-            ollama pull gemma2
-            ```
+2.  LLM 및 도구 준비
+    -   Ollama 설치 후 gemma2:9b-instruct 모델 다운로드: `ollama pull gemma2`
+    -   Docker Desktop 실행 및 GROBID 서비스 시작 (제공된 `start_services.bat` 관리자 권한 실행 권장)
 
-3.  **Python 의존성 설치**
-    -   프로젝트 루트에서 가상 환경을 생성하고 활성화하는 것을 권장합니다.
-    -   다음 명령어를 실행하여 필요한 라이브러리를 설치합니다.
-        ```bash
-        pip install -r requirements.txt
-        ```
-
-## 5. 사용법
-
-### 5.1. 서비스 시작
-
-1.  **핵심 서비스 실행 (GROBID)**
-    -   **중요**: `start_services.bat` 파일에 마우스 오른쪽 버튼을 클릭하고 **"관리자 권한으로 실행"**을 선택하여 실행해야 합니다. 이는 Docker 실행에 필요한 권한을 얻기 위함입니다.
-    -   이 스크립트는 백그라운드에서 GROBID Docker 컨테이너만 시작합니다. Ollama LLM 서버는 설치 후 자동으로 실행되므로 별도로 시작할 필요가 없습니다.
-
-### 5.2. 파이프라인 실행
-
-1.  **연구 질문(PICOS) 설정**
-    -   프로젝트 루트에 있는 `picos_config.yaml` 파일을 열어 자신의 연구 주제에 맞는 PICOS 질문을 입력하고 저장합니다.
-
-2.  **메인 파이프라인 실행**
-    -   모든 서비스가 실행 중인 상태에서, 터미널을 열고 프로젝트 루트에서 다음 명령어로 메인 스크립트를 실행합니다.
-        ```bash
-        python main.py
-        ```
-    -   스크립트는 `picos_config.yaml`을 기반으로 파이프라인을 순차적으로 수행합니다.
-    -   **참고**: 4단계 스크리닝 과정에서는 스크립트가 자동으로 멈추고, ASReview LAB UI를 통해 사용자가 직접 프로젝트를 생성하도록 안내합니다. 자세한 내용은 스크립트 실행 시 출력되는 메시지를 참고하세요.
-
-### 5.3. (중요) 수동 PDF 추가 워크플로우
-
-자동화된 PDF 다운로드는 오픈 액세스 정책 및 논문 제공 형태의 한계로 인해 실패할 수 있습니다. 이 경우, 다음과 같이 수동으로 PDF를 추가하여 파이프라인을 계속 진행할 수 있습니다.
-
-1.  **PDF 다운로드**: 구독 중인 저널 사이트 등에서 필요한 논문의 PDF를 직접 다운로드합니다.
-2.  **PMID 확인**: `data/tables/articles.csv` 파일을 열어 방금 다운로드한 논문의 PMID (PubMed ID)를 확인합니다.
-3.  **파일명 변경**: 다운로드한 PDF 파일의 이름을 **`{PMID}.pdf`** 형식으로 정확하게 변경합니다. (예: `31415926.pdf`)
-4.  **파일 이동**: 이름이 변경된 PDF 파일을 `data/pdf/` 폴더로 옮깁니다.
-5.  **파이프라인 재실행**: `python main.py`를 다시 실행합니다. 파이프라인은 `data/pdf` 폴더에 수동으로 추가된 파일을 자동으로 인식하여 **PDF 파싱 단계부터** 나머지 분석을 수행합니다.
-
-### 5.4. 데이터 초기화
-
--   파이프라인 실행 없이 생성된 데이터만 초기화하고 싶을 경우, 다음 명령어를 사용합니다.
+3.  Python 의존성 설치
     ```bash
-    python clear_data.py
+    pip install -r requirements.txt
     ```
--   이 스크립트는 `data` 폴더 내의 생성된 파일들만 안전하게 삭제하고, 폴더 구조나 `readme.md` 파일은 보존합니다.
 
-## 6. 개발 로그
+## 5. 사용법 (Web UI)
 
--   프로젝트의 상세한 진행 과정과 계획은 `reference_materials/Development_log.txt` 파일에 기록되어 있습니다. 최근 ASReview 연동 과정에서 발생한 의존성 문제를 해결하고, 올바른 확장 패키지(`asreview-makita`)를 찾아 적용하는 디버깅 과정이 포함되었습니다.
+가장 권장되는 실행 방식입니다.
+
+1.  앱 실행
+    터미널에서 다음 명령어를 입력합니다. (포트 충돌 방지를 위해 8502 포트 사용 권장)
+    ```bash
+    python -m streamlit run app.py --server.port 8502
+    ```
+
+2.  웹 브라우저 접속
+    브라우저가 자동으로 열리거나, `http://localhost:8502`로 접속합니다.
+
+3.  주요 탭 기능
+    -   1. Search (PICO): 연구 질문(PICO) 입력, 검색 쿼리 생성 및 PubMed 검색 실행.
+    -   2. Screening: 검색된 논문을 확인하고 AI 자동 스크리닝 실행.
+    -   3. Analysis Pipeline: PDF 다운로드 -> 파싱 -> RoB 평가 -> 데이터 추출 과정을 순차적으로 실행.
+    -   4. Report: 최종 보고서(PRISMA 다이어그램 포함) 생성 및 다운로드. 한글/영어 토글 지원.
+
+## 6. 사용법 (CLI)
+
+기존의 터미널 기반 실행 방식입니다.
+
+```bash
+python main.py
+```
+`picos_config.yaml` 설정을 기반으로 전체 파이프라인을 순차적으로 수행합니다.
+
+## 7. 수동 PDF 추가
+
+자동 다운로드에 실패한 논문은 수동으로 추가하여 처리할 수 있습니다.
+1. PDF 직접 다운로드.
+2. 파일명을 `{PMID}.pdf`로 변경 (예: 12345678.pdf).
+3. `data/pdf/` 폴더로 이동.
+4. 앱 또는 스크립트 재실행 (이미 처리된 단계는 건너뛰고 진행).
+
+## 8. 개발 로그
+
+프로젝트의 상세한 개발 과정은 `reference_materials/Development_log.txt`에 기록되어 있습니다.

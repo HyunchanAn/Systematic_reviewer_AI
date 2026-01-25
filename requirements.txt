@@ -2,9 +2,13 @@
 openai
 requests
 pandas
+numpy<2.0
 asreview
 pypdf
 PyYAML
+tabulate
+asreview-makita
+streamlit
 
 # Note: Other dependencies like PyTorch, vLLM, and Docker for GROBID
 # should be installed on the development machine (home PC) as per the memo.

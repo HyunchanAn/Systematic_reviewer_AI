@@ -74,11 +74,19 @@ def try_pmc_download(pmcid, output_path, timeout=60):
         print(f"  - Failed to download from PMC: {e}")
         return False
 
-def download_pdfs_from_xml(xml_path, output_dir):
+def download_pdfs_from_xml(xml_path, output_dir, allowed_pmids=None):
     """
     Parses a PubMed XML file, extracts DOIs and PMCIDs, and attempts to download open-access PDFs
     using a fallback strategy (Unpaywall -> PMC).
-    Returns a dictionary of PMID to download status.
+    
+    Args:
+        xml_path (str): Path to the PubMed XML file.
+        output_dir (str): Directory to save downloaded PDFs.
+        allowed_pmids (list, optional): List of PMIDs to download. If provided, only articles 
+                                        with PMIDs in this list will be processed.
+                                        
+    Returns:
+        dict: A dictionary of PMID to download status.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -90,6 +98,20 @@ def download_pdfs_from_xml(xml_path, output_dir):
         return {}
 
     articles = root.findall(".//PubmedArticle")
+    total_found_xml = len(articles)
+    
+    # Filter articles if allowed_pmids is provided
+    if allowed_pmids is not None:
+        allowed_pmids_set = set(str(p) for p in allowed_pmids)
+        articles_to_process = []
+        for article in articles:
+            pmid_node = article.find(".//PMID")
+            pmid = pmid_node.text if pmid_node is not None else None
+            if pmid and pmid in allowed_pmids_set:
+                articles_to_process.append(article)
+        articles = articles_to_process
+        print(f"Filtered XML from {total_found_xml} to {len(articles)} articles based on screening results.")
+    
     total_articles = len(articles)
     if total_articles == 0:
         return {}

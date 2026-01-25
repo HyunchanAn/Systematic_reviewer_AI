@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET # Added for XML parsing
 from src.ingest import pubmed, downloader
 from src.parse import pubmed_parser, grobid_client, tei_parser
+from src.screen import screener
+from src.rob import assessor
+from src.report import generator
 from src.llm import client as llm_client
 from src.utils import data_manager
 
@@ -118,6 +121,14 @@ def main():
 
     setup_directories()
 
+    stats = {
+        'total_found': 0,
+        'screened': 0,
+        'excluded': 0,
+        'included': 0,
+        'retrieved': 0
+    }
+
     # --- 1. Scoping & Search --- #
     print("\nStep 1: Scoping and Searching")
     picos_config = load_or_create_picos_config()
@@ -152,6 +163,7 @@ def main():
         maxdate=end_date,
         sort='relevance' # Sort by relevance instead of date
     )
+    stats['total_found'] = total_count
 
     if total_count == 0:
         print("No articles found. Exiting pipeline.")
@@ -234,16 +246,58 @@ def main():
         csv_path = os.path.join(TABLES_DIR, "articles.csv")
         pubmed_parser.parse_and_save_articles_csv(filtered_articles_xml, csv_path) # Use filtered XML
 
+        # --- 2.5 Automated Screening (Title/Abstract) --- #
+        print("\nStep 2.5: Automated Screening")
+        if os.path.exists(csv_path):
+             articles_df = pd.read_csv(csv_path, encoding='utf-8-sig')
+             # Run screening
+             screened_df = screener.screen_abstracts(articles_df, picos_config)
+             
+             # Save detailed results
+             screening_results_path = os.path.join(TABLES_DIR, "screening_results.csv")
+             screened_df.to_csv(screening_results_path, index=False, encoding='utf-8-sig')
+             print(f"Saved screening results to {screening_results_path}")
+             
+             # Update stats
+             stats['screened'] = len(screened_df)
+             
+             # Filter for included articles
+             included_df = screened_df[screened_df['screening_decision'] == 'Included']
+             included_pmids = included_df['pmid'].astype(str).tolist()
+             
+             stats['included'] = len(included_df)
+             stats['excluded'] = stats['screened'] - stats['included']
+             
+             print(f"Screening Result: {len(included_df)} included out of {len(screened_df)} total.")
+             
+             # Update articles.csv with screening info
+             screened_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+             
+             if not included_pmids:
+                 print("No articles met the inclusion criteria. Exiting pipeline.")
+                 # Generate report even if no included articles to show the exclusion flow
+                 report_path = os.path.join(DATA_DIR, "report.md")
+                 extracted_csv_path = os.path.join(TABLES_DIR, "extracted_pico.csv")
+                 rob_csv_path = os.path.join(TABLES_DIR, "rob_assessment.csv")
+                 generator.generate_report(stats, picos_config, extracted_csv_path, rob_csv_path, report_path)
+                 return
+        else:
+             print("Error: articles.csv not found.")
+             return
+
         # --- 3. PDF Downloading --- #
-        print("\nStep 3: Downloading PDFs")
+        print("\nStep 3: Downloading PDFs for Included Articles")
         pdf_dir = os.path.join(DATA_DIR, "pdf")
-        pdf_download_status = downloader.download_pdfs_from_xml(xml_path, pdf_dir) # Use filtered XML path
+        
+        # Pass included_pmids to filter downloads
+        pdf_download_status = downloader.download_pdfs_from_xml(xml_path, pdf_dir, allowed_pmids=included_pmids) 
 
         # Update articles.csv with PDF download status
         print("\nUpdating articles.csv with PDF download status...")
         try:
             articles_df = pd.read_csv(csv_path, encoding='utf-8-sig')
-            articles_df['pdf_download_status'] = articles_df['pmid'].map(pdf_download_status)
+            # Map status only for downloaded ones, others might be 'Excluded' effectively (no PDF)
+            articles_df['pdf_download_status'] = articles_df['pmid'].astype(str).map(pdf_download_status)
             articles_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
             print(f"Updated {csv_path} with PDF download status.")
         except Exception as e:
@@ -252,7 +306,8 @@ def main():
         # --- 3.5. Parse PDFs with GROBID --- #
         print("\nStep 3.5: Parsing PDFs with GROBID")
         # Find successfully downloaded PDFs
-        downloaded_pdfs = [k for k, v in pdf_download_status.items() if v == "Downloaded" or v == "Already Downloaded"]
+        downloaded_pdfs = [k for k, v in pdf_download_status.items() if v == "Downloaded" or v == "Already Downloaded" or v == "Downloaded (Unpaywall)" or v == "Downloaded (PMC)"]
+        stats['retrieved'] = len(downloaded_pdfs)
         
         if not downloaded_pdfs:
             print("No downloaded PDFs to process with GROBID.")
@@ -271,23 +326,14 @@ def main():
                         except Exception as e:
                             print(f"  - Error saving TEI XML for {pmid}: {e}")
 
-    # --- 4. Screening with ASReview --- #
-    print("\nStep 4: Screening with ASReview")
-    csv_path = os.path.join(TABLES_DIR, "articles.csv")
-    if not os.path.exists(csv_path):
-        print(f"Error: articles.csv not found at {csv_path}. Cannot proceed with ASReview.")
-    else:
-        print("\n--- 수동 작업 필요: ASReview 프로젝트 생성 ---")
-        print("라벨이 없는 데이터셋의 ASReview 프로젝트 생성은 ASReview LAB 인터페이스를 통해 수동으로 진행해야 합니다.")
-        print("\n방법:")
-        print("1. 새 터미널을 엽니다.")
-        print("2. 다음 명령어를 실행합니다: asreview lab")
-        print("3. 웹 브라우저에 ASReview 대시보드가 열립니다.")
-        print("4. 'Create' 버튼을 클릭하여 새 프로젝트를 시작합니다.")
-        print("5. 스크리닝 모드로 'Oracle'을 선택합니다.")
-        print("6. 화면의 안내에 따라 진행하고, 데이터셋을 선택하라는 메시지가 나오면 아래 파일을 선택합니다:")
-        print(f"   {os.path.abspath(csv_path)}")
-        print("\n프로젝트를 생성하고 스크리닝을 완료한 후, 파이프라인의 다음 단계를 진행할 수 있습니다.")
+        # --- 3.6. Risk of Bias Assessment --- #
+        print("\nStep 3.6: Automated Risk of Bias Assessment")
+        rob_csv_path = os.path.join(TABLES_DIR, "rob_assessment.csv")
+        # Check if we have TEI files
+        if os.path.exists(TEI_DIR) and os.listdir(TEI_DIR):
+            assessor.batch_assess_rob(TEI_DIR, rob_csv_path)
+        else:
+            print("No TEI files found. Skipping RoB assessment.")
 
     # --- 5. Data Extraction & LLM Summarization ---
     print("\nStep 5: Data Extraction and Summarization")
@@ -376,7 +422,15 @@ TEXT:
             extracted_df.to_csv(extracted_csv_path, index=False, encoding='utf-8-sig')
             print(f"\nSaved all extracted PICO data to {extracted_csv_path}")
 
-    print("\n--- Pipeline Scaffolding Complete ---")
+    # --- 7. Reporting ---
+    print("\nStep 7: Generating Final Report")
+    report_path = os.path.join(DATA_DIR, "report.md")
+    extracted_csv_path = os.path.join(TABLES_DIR, "extracted_pico.csv")
+    rob_csv_path = os.path.join(TABLES_DIR, "rob_assessment.csv")
+    generator.generate_report(stats, picos_config, extracted_csv_path, rob_csv_path, report_path)
+    
+    print("\n--- Project Enhancements Complete---")
+    print(f"See {report_path} for the systematic review summary.")
 
 if __name__ == "__main__":
     main()
